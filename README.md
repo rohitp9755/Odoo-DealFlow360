@@ -1,568 +1,267 @@
 # Ink the Deal
 
-Ink the Deal is a MERN-stack Quote-to-Cash platform that connects the complete deal lifecycle — from quotation and approval to negotiation, fulfillment, billing, and business insights.
-
-It brings sales, finance, operations, and customers into one connected workflow.
+**Ink the Deal** is a MERN-stack Quote-to-Cash platform that unifies the complete deal lifecycle — from quotation and approval to negotiation, fulfillment, billing, and business insights — into a single connected workflow spanning sales, finance, operations, and customers.
 
 ---
 
 ## Overview
 
-Traditional sales processes often use separate systems for quotations, approvals, customer communication, inventory, and billing. This creates delays, manual work, and limited visibility.
+Traditional sales processes rely on disconnected systems for quotations, approvals, customer communication, inventory, and billing. This fragmentation creates delays, manual overhead, and limited visibility into deal health.
 
-**Ink the Deal connects the entire process around a single deal.**
+**Ink the Deal connects the entire process around a single deal:**
 
-```text
-Customer
-   ↓
-Quotation
-   ↓
-Risk Analysis
-   ↓
-Approval
-   ↓
-AI Negotiation
-   ↓
-Customer Confirmation
-   ↓
-Fulfillment
-   ↓
-Subscription / Invoice
-   ↓
-Deal Health
-   ↓
-Business Insights
+```
+Customer → Quotation → Risk Analysis → Approval → AI Negotiation
+    → Customer Confirmation → Fulfillment → Subscription / Invoice
+    → Deal Health → Business Insights
+```
 
-Core Features
+---
 
-1. Sales Dashboard
+## Core Features
 
+### 1. Sales Dashboard
 A centralized workspace for monitoring:
+- Revenue and pipeline
+- Open quotations
+- Pending approvals
+- At-risk deals
+- Recent activity
 
-Revenue and pipeline
+The dashboard is designed to surface what requires attention right now.
 
-Open quotations
+### 2. Smart Quotations
+Create and manage quotations with products, pricing, quantities, discounts, taxes, approval status, customer information, and deal status.
 
-Pending approvals
+**Quotation lifecycle:**
+```
+Draft → Pending Approval → Approved → Negotiation → Confirmed
+```
 
-At-risk deals
+### 3. Discount & Risk Analysis
+Ink the Deal evaluates discounts against configurable business rules:
 
-Recent activity
+```
+Customer Tier + Product Category + Discount Given + Allowed Discount → Risk Evaluation
+```
 
-The dashboard focuses on what requires attention right now.
-
-2. Smart Quotations
-
-Create and manage quotations with:
-
-Products and pricing
-
-Quantities
-
-Discounts and taxes
-
-Approval status
-
-Customer information
-
-Deal status
-
-Quotation lifecycle:
-
-Draft
-  ↓
-Pending Approval
-  ↓
-Approved
-  ↓
-Negotiation
-  ↓
-Confirmed
-
-3. Discount & Risk Analysis
-
-Ink the Deal evaluates discounts against configurable business rules.
-
-Customer Tier
-      +
-Product Category
-      +
-Discount Given
-      +
-Allowed Discount
-      ↓
-Risk Evaluation
-
-Deals can be classified as:
-
-LOW       → Normal
-MEDIUM    → Manager Review
-HIGH      → Manager + Finance
+| Risk Level | Response |
+|---|---|
+| Low | Normal processing |
+| Medium | Manager review |
+| High | Manager + Finance review |
 
 This helps businesses control discount leakage and identify risky deals early.
 
-4. AI Negotiation Agent
+### 4. AI Negotiation Agent
+Assists sales teams during customer negotiations by:
+- Understanding customer requests
+- Analyzing proposed changes
+- Suggesting counter-offers
+- Applying pricing and discount limits
+- Recommending negotiation strategies
+- Protecting business margins
 
-The AI Negotiation Agent assists sales teams during customer negotiations.
+The agent supports the salesperson while keeping the final decision under human control.
 
-It can:
+### 5. Smart Approval Workflow
+Approval paths are automatically determined based on deal risk:
 
-Understand customer requests
+| Risk Level | Approval Path |
+|---|---|
+| Low | Automatic approval |
+| Medium | Sales Manager |
+| High | Sales Manager → Finance |
 
-Analyze proposed changes
+Approvers can approve, reject, request changes, add comments, and review approval history.
 
-Suggest counter-offers
+### 6. Customer Portal
+Customers can view quotations, review products, add comments, request price or delivery changes, submit counter-offers, and confirm quotations — replacing fragmented email-based negotiation with a structured workflow.
 
-Consider pricing and discount limits
+### 7. Fulfillment & Inventory
+Approved deals connect directly with inventory data, providing visibility into warehouse stock, reserved stock, available stock, backorders, fulfillment status, and warehouse allocation. The system can also recommend fulfillment options based on availability.
 
-Recommend negotiation strategies
+### 8. Subscriptions & Billing
+Manage recurring products and services alongside the original deal, including active subscriptions, billing cycles, recurring revenue, invoices, due dates, and payment status.
 
-Protect business margins
+### 9. Deal Health
+Continuously evaluates deal activity to surface potential problems: stalled deals, discount anomalies, delivery delays, high-risk deals, and lack of customer activity — identifying issues before they become lost revenue.
 
-The agent assists the salesperson while keeping the final decision under human control.
+### 10. Basket Analysis
+Identifies products frequently purchased together to uncover cross-selling and upselling opportunities, product relationships, and bundle recommendations — turning transaction data into actionable sales opportunities.
 
-5. Smart Approval Workflow
+### 11. Product Management
+A centralized product and pricing catalog keeps quotation data consistent, covering product name, category, price, currency, unit, tax, description, variants, stock quantity, subscription settings, and price lists.
 
-Approval paths are automatically determined based on deal risk.
+### 12. Configurable Discount Rules
+Administrators can configure tier- and category-based discount limits, with approval rules driven by the resulting risk level.
 
-Low Risk       → Automatic Approval
-Medium Risk    → Sales Manager
-High Risk      → Sales Manager → Finance
+**Customer tier limits:**
 
-Approvers can:
+| Customer Tier | Maximum Discount |
+|---|---|
+| Bronze | 5% |
+| Silver | 10% |
+| Gold | 15% |
 
-Approve
+**Product category limits:**
 
-Reject
+| Category | Maximum Discount |
+|---|---|
+| Hardware | 15% |
+| Services | 10% |
 
-Request changes
+---
 
-Add comments
+## Complete Deal Lifecycle
 
-Review approval history
+```
+QUOTE → RISK ANALYSIS → APPROVAL → AI NEGOTIATION → CUSTOMER CONFIRMATION
+    → FULFILLMENT → (SUBSCRIPTION / INVOICE) → PAYMENT
+    → DEAL HEALTH → BUSINESS INSIGHTS
+```
 
-6. Customer Portal
+**One platform. One deal. One connected journey.**
 
-Customers receive a dedicated interface where they can:
+---
 
-View quotations
+## User Roles
 
-Review products
+| Role | Responsibility |
+|---|---|
+| Sales Representative | Create and manage quotations |
+| Sales Manager | Review and approve deals |
+| Finance | Review high-risk deals and billing |
+| Operations | Manage inventory and fulfillment |
+| Customer | Review and negotiate quotations |
+| Admin | Manage products, pricing, and rules |
 
-Add comments
+---
 
-Request price changes
+## Frontend Experience
 
-Request delivery changes
+Ink the Deal is built as a modern enterprise SaaS application using React.js and Tailwind CSS, following a clean, restrained visual system focused on usability and information hierarchy over excessive visual effects.
 
-Submit counter-offers
+**Design principles:**
+- Minimal and professional interface
+- Soft neutral backgrounds with muted accent colors
+- Clear information hierarchy
+- Thin borders and subtle shadows
+- Consistent spacing and typography
+- Responsive layouts
+- Purposeful micro-interactions
 
-Confirm quotations
-
-This replaces fragmented email-based negotiation with a structured workflow.
-
-7. Fulfillment & Inventory
-
-Approved deals are connected with inventory information.
-
-The system provides visibility into:
-
-Warehouse stock
-
-Reserved stock
-
-Available stock
-
-Backorders
-
-Fulfillment status
-
-Warehouse allocation
-
-It can also recommend fulfillment options based on available inventory.
-
-8. Subscriptions & Billing
-
-Manage recurring products and services alongside the original deal.
-
-Track:
-
-Active subscriptions
-
-Billing cycles
-
-Recurring revenue
-
-Invoices
-
-Due dates
-
-Payment status
-
-9. Deal Health
-
-Ink the Deal continuously evaluates deal activity to identify potential problems.
-
-It can highlight:
-
-Stalled deals
-
-Discount anomalies
-
-Delivery delays
-
-High-risk deals
-
-Lack of customer activity
-
-The objective is to identify problems before they become lost revenue.
-
-10. Basket Analysis
-
-Basket Analysis identifies products that are frequently purchased together.
-
-It helps businesses discover:
-
-Cross-selling opportunities
-
-Upselling opportunities
-
-Product relationships
-
-Frequently combined products
-
-Potential bundle recommendations
-
-This converts transaction data into actionable sales opportunities.
-
-11. Product Management
-
-A centralized product and pricing catalog keeps quotation data consistent.
-
-Each product can contain:
-
-Product name
-
-Category
-
-Price
-
-Currency
-
-Unit
-
-Tax
-
-Description
-
-Variants
-
-Stock quantity
-
-Subscription settings
-
-Price lists
-
-12. Configurable Discount Rules
-
-Administrators can configure business rules such as:
-
-Customer Tier
-
-Maximum Discount
-
-Bronze
-
-5%
-
-Silver
-
-10%
-
-Gold
-
-15%
-
-Product-level rules can also be defined:
-
-Category
-
-Maximum Discount
-
-Hardware
-
-15%
-
-Services
-
-10%
-
-Approval rules can then be based on the resulting risk level.
-
-Complete Deal Lifecycle
-
-                    INK THE DEAL
-
-                       QUOTE
-                         ↓
-                    RISK ANALYSIS
-                         ↓
-                      APPROVAL
-                         ↓
-                   AI NEGOTIATION
-                         ↓
-                CUSTOMER CONFIRMATION
-                         ↓
-                    FULFILLMENT
-                      ↙       ↘
-             SUBSCRIPTION     INVOICE
-                      ↘       ↙
-                       PAYMENT
-                         ↓
-                     DEAL HEALTH
-                         ↓
-                 BUSINESS INSIGHTS
-
-One platform. One deal. One connected journey.
-
-User Roles
-
-Role
-
-Responsibility
-
-Sales Representative
-
-Create and manage quotations
-
-Sales Manager
-
-Review and approve deals
-
-Finance
-
-Review high-risk deals and billing
-
-Operations
-
-Manage inventory and fulfillment
-
-Customer
-
-Review and negotiate quotations
-
-Admin
-
-Manage products, pricing, and rules
-
-Frontend Experience
-
-Ink the Deal is designed as a modern enterprise SaaS application using React.js and Tailwind CSS.
-
-The interface follows a clean, restrained visual system focused on usability and information hierarchy rather than excessive visual effects.
-
-Design Principles
-
-Minimal and professional interface
-
-Soft neutral backgrounds
-
-Muted accent colors
-
-Clear information hierarchy
-
-Thin borders and subtle shadows
-
-Consistent spacing and typography
-
-Responsive layouts
-
-Purposeful micro-interactions
-
-Interactive UI
-
-The frontend uses subtle interactions to improve usability:
-
-Hover states on cards and navigation
-
-Small elevation changes on interactive elements
-
-Animated data transitions
-
-Contextual tooltips
-
-Floating insight cards
-
-AI recommendation panels
-
-Interactive charts
-
-Status indicators
-
-Animations are used to communicate state and hierarchy rather than distract from the application.
-
-Application Journey
+**Interactive UI elements:**
+- Hover states on cards and navigation
+- Small elevation changes on interactive elements
+- Animated data transitions
+- Contextual tooltips
+- Floating insight cards
+- AI recommendation panels
+- Interactive charts
+- Status indicators
+
+Animations are used to communicate state and hierarchy, not to distract from the application.
+
+---
+
+## Application Journey
 
 The platform is organized into connected screens representing the full business lifecycle:
 
-01  Login / Signup
-        ↓
-02  Sales Dashboard
-        ↓
-03  Quotations
-        ↓
-04  Quotation Detail
-        ↓
-05  Approvals
-        ↓
-06  Approval Detail
-        ↓
-07  Fulfillment & Stock
-        ↓
-08  Fulfillment Detail
-        ↓
-09  Subscriptions
-        ↓
-10  Billing Detail
-        ↓
-11  Customer Portal
-        ↓
-12  Invoices
-        ↓
-13  Invoice Detail
-        ↓
-14  Deal Health
-        ↓
-15  Reporting
-        ↓
-16  Product Dashboard
-        ↓
-17  Product Details
-        ↓
-18  Discount Rules
+1. Login / Signup
+2. Sales Dashboard
+3. Quotations
+4. Quotation Detail
+5. Approvals
+6. Approval Detail
+7. Fulfillment & Stock
+8. Fulfillment Detail
+9. Subscriptions
+10. Billing Detail
+11. Customer Portal
+12. Invoices
+13. Invoice Detail
+14. Deal Health
+15. Reporting
+16. Product Dashboard
+17. Product Details
+18. Discount Rules
 
-These are not isolated pages. They represent one connected business process.
+These are not isolated pages — they represent one connected business process.
 
-Technology Stack
+---
 
-Layer
+## Technology Stack
 
-Technology
+| Layer | Technology |
+|---|---|
+| Frontend | React.js |
+| Styling | Tailwind CSS |
+| Backend | Node.js |
+| API | Express.js |
+| Database | MongoDB |
+| ODM | Mongoose |
+| Authentication | Role-Based Authentication |
+| AI | Risk Analysis & Negotiation Agent |
+| Analytics | Basket Analysis & Deal Insights |
 
-Frontend
+**MERN:**
+- **M** — MongoDB: Database
+- **E** — Express.js: Backend API
+- **R** — React.js: Frontend
+- **N** — Node.js: Server runtime
 
-React.js
+---
 
-Styling
+## Architecture
 
-Tailwind CSS
-
-Backend
-
-Node.js
-
-API
-
-Express.js
-
-Database
-
-MongoDB
-
-ODM
-
-Mongoose
-
-Authentication
-
-Role-Based Authentication
-
-AI
-
-Risk Analysis & Negotiation Agent
-
-Analytics
-
-Basket Analysis & Deal Insights
-
-Architecture
-
+```
 ┌──────────────────────────────────────────┐
-│                 FRONTEND                 │
-│                  React                  │
-│       Components • Pages • UI           │
-└────────────────────┬─────────────────────┘
-                     │
-                     │ REST API
-                     ▼
+│                 FRONTEND                  │
+│                  React                    │
+│        Components • Pages • UI            │
+└────────────────────┬───────────────────────┘
+                      │ REST API
+                      ▼
 ┌──────────────────────────────────────────┐
-│                 BACKEND                 │
-│                Node.js                  │
-│              Express.js                │
-│      Routes • Controllers • Logic       │
-└────────────────────┬─────────────────────┘
-                     │
-                     ▼
+│                 BACKEND                   │
+│           Node.js • Express.js            │
+│    Routes • Controllers • Business Logic  │
+└────────────────────┬───────────────────────┘
+                      │
+                      ▼
 ┌──────────────────────────────────────────┐
-│                DATABASE                 │
-│                 MongoDB                 │
-│            Mongoose Models              │
+│                 DATABASE                  │
+│                 MongoDB                   │
+│             Mongoose Models               │
 └──────────────────────────────────────────┘
+```
 
-MERN
+---
 
-M — MongoDB: Database
+## Core Data Model
 
-E — Express.js: Backend API
-
-R — React.js: Frontend
-
-N — Node.js: Server runtime
-
-Core Data Model
-
+```
 Company
-   │
-   ├── Users
-   │
-   └── Quotations
-          │
-          ├── Quote Items → Products
-          ├── Approval
-          ├── Negotiation
-          ├── Fulfillment
-          ├── Subscription
-          ├── Invoice
-          └── Deal Health
+  ├── Users
+  └── Quotations
+        ├── Quote Items → Products
+        ├── Approval
+        ├── Negotiation
+        ├── Fulfillment
+        ├── Subscription
+        ├── Invoice
+        └── Deal Health
+```
 
-Core entities include:
+**Core entities:** Users, Companies, Products, Quotations, Approvals, Negotiations, Fulfillments, Subscriptions, Invoices, Deal Health, Discount Configuration, Audit Logs.
 
-Users
+---
 
-Companies
+## Project Structure
 
-Products
-
-Quotations
-
-Approvals
-
-Negotiations
-
-Fulfillments
-
-Subscriptions
-
-Invoices
-
-Deal Health
-
-Discount Configuration
-
-Audit Logs
-
-Project Structure
-
+```
 Ink-the-Deal/
 │
 ├── client/
@@ -585,197 +284,150 @@ Ink-the-Deal/
 │
 ├── README.md
 └── package.json
+```
 
-Getting Started
+---
 
-Prerequisites
+## Getting Started
 
-Node.js
+### Prerequisites
+- Node.js
+- npm
+- MongoDB or MongoDB Atlas
+- Git
 
-npm
-
-MongoDB or MongoDB Atlas
-
-Git
-
-Clone the Repository
-
+### Clone the Repository
+```bash
 git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd Ink-the-Deal
+```
 
-Install Frontend Dependencies
-
+### Install Frontend Dependencies
+```bash
 cd client
 npm install
+```
 
-Install Backend Dependencies
-
-Open another terminal:
-
+### Install Backend Dependencies
+In a separate terminal:
+```bash
 cd server
 npm install
+```
 
-Environment Variables
-
-Create server/.env:
-
+### Environment Variables
+Create a `.env` file inside `server/`:
+```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
+```
 
-Do not commit .env or database credentials to the repository.
+> **Note:** Do not commit `.env` or database credentials to the repository.
 
-Start the Backend
-
+### Start the Backend
+```bash
 cd server
 npm run dev
+```
 
-Start the Frontend
-
-Open another terminal:
-
+### Start the Frontend
+In a separate terminal:
+```bash
 cd client
 npm run dev
+```
 
 Open the local URL provided by Vite.
 
-Recommended Hackathon Demo
+---
 
-The strongest demo follows one deal through the complete platform.
+## Recommended Hackathon Demo
 
-Example Deal
+The strongest demo follows a single deal through the complete platform.
 
-Customer: Acme Corp
+**Example deal — Customer: Acme Corp**
+- 2 × Laptop Pro 14
+- 1 × Onsite Setup
+- 1 × Extended Warranty
 
-Products:
-
-2 × Laptop Pro 14
-
-1 × Onsite Setup
-
-1 × Extended Warranty
-
-Demo Flow
-
+**Demo flow:**
 1. Create a quotation
-          ↓
 2. Apply a discount
-          ↓
-3. Risk engine detects an issue
-          ↓
-4. Quote enters approval workflow
-          ↓
+3. Risk engine flags an issue
+4. Quote enters the approval workflow
 5. Manager reviews the deal
-          ↓
 6. Customer negotiates through the portal
-          ↓
 7. AI Negotiation Agent suggests a response
-          ↓
 8. Customer confirms the deal
-          ↓
 9. Inventory is checked
-          ↓
 10. Fulfillment is planned
-          ↓
 11. Invoice / subscription is generated
-          ↓
 12. Deal Health monitors the transaction
-          ↓
-13. Basket Analysis provides sales insights
+13. Basket Analysis surfaces sales insights
 
-This demonstrates how multiple business processes work together instead of operating as isolated features.
+This flow demonstrates how multiple business processes operate together rather than as isolated features.
 
-Why Ink the Deal?
+---
 
-Ink the Deal combines:
+## Why Ink the Deal?
 
-Sales Automation + Risk Intelligence + AI Negotiation + Smart Approvals + Fulfillment + Billing + Basket Analysis
+Ink the Deal combines **Sales Automation, Risk Intelligence, AI Negotiation, Smart Approvals, Fulfillment, Billing, and Basket Analysis** into a single connected platform.
 
-into a single connected platform.
+Rather than simply recording what happened to a deal, Ink the Deal helps teams understand:
 
-Instead of simply showing what happened to a deal, Ink the Deal helps teams understand:
+> **What happened, what is happening, and what should happen next.**
 
-What happened, what is happening, and what should happen next.
+---
 
-Security
+## Security
 
-The application is designed around common security practices, including:
+The application is built around common security practices, including:
+- Authentication
+- Role-based access control
+- Protected routes
+- Password hashing
+- Environment-based secrets
+- API validation
+- Audit logging
 
-Authentication
+For production deployment, additional controls — HTTPS, rate limiting, stronger input validation, and infrastructure-level access controls — should be enabled.
 
-Role-based access
+---
 
-Protected routes
+## Future Scope
 
-Password hashing
+- Predictive revenue forecasting
+- Advanced deal-risk scoring
+- Next-best-action recommendations
+- Automated customer follow-ups
+- Real-time notifications
+- Payment gateway integration
+- CRM and ERP integrations
+- Multi-currency support
+- Advanced predictive analytics
+- AI-powered quote recommendations
 
-Environment-based secrets
+---
 
-API validation
+## The Core Idea
 
-Audit logging
+Most systems ask: *"What happened to this deal?"*
 
-For production deployment, additional controls such as HTTPS, rate limiting, stronger input validation, and infrastructure-level access controls should be enabled.
+**Ink the Deal** aims to answer: *"What happened, what is happening, and what should happen next?"*
 
-Future Scope
+```
+QUOTE → RISK → APPROVAL → NEGOTIATION → FULFILLMENT
+    → SUBSCRIPTION / INVOICE → PAYMENT → DEAL HEALTH → INSIGHT
+```
 
-The platform can be extended with:
+---
 
-Predictive revenue forecasting
-
-Advanced deal-risk scoring
-
-Next-best-action recommendations
-
-Automated customer follow-ups
-
-Real-time notifications
-
-Payment gateway integration
-
-CRM and ERP integrations
-
-Multi-currency support
-
-Advanced predictive analytics
-
-AI-powered quote recommendations
-
-The Core Idea
-
-Most systems ask:
-
-What happened to this deal?
-
-Ink the Deal aims to answer:
-
-What happened, what is happening, and what should happen next?
-
-                    INK THE DEAL
-
-                       QUOTE
-                         ↓
-                       RISK
-                         ↓
-                    APPROVAL
-                         ↓
-                   NEGOTIATION
-                         ↓
-                   FULFILLMENT
-                         ↓
-               SUBSCRIPTION / INVOICE
-                         ↓
-                     PAYMENT
-                         ↓
-                   DEAL HEALTH
-                         ↓
-                     INSIGHT
-
-Built With
+## Built With
 
 MongoDB · Express.js · React.js · Node.js · Tailwind CSS
 
-Ink the Deal
+---
 
-From Quote to Revenue, in one connected workflow.
+**Ink the Deal** — *From Quote to Revenue, in one connected workflow.*
