@@ -11,7 +11,7 @@
 ![Database](https://img.shields.io/badge/Database-In--Memory-8B7CF6?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
 
-[Quick start](#quick-start) • [Screenshots](#screenshots) • [How it thinks](#how-it-thinks) • [Architecture](#architecture) • [API reference](#api-reference) • [Demo script](#demo-script)
+[Quick start](#quick-start) • [Features](#features-at-a-glance) • [Screenshots](#screenshots) • [How it thinks](#how-it-thinks) • [Lifecycle](#quotation-lifecycle) • [Architecture](#architecture) • [API reference](#api-reference) • [Demo script](#demo-script)
 
 </div>
 
@@ -19,11 +19,26 @@
 
 ## What this is
 
-Most sales tools handle the basics: create a quote, confirm an order, invoice it. Real B2B sales is messier — multi-level discount approvals, stock spread across warehouses, subscriptions bundled with one-time hardware, and customers who want to negotiate instead of emailing back and forth.
+Most sales tools do the basics fine: make a quote, confirm an order, send an invoice. Real B2B sales is messier than that — discounts need sign-off, stock is split across warehouses, some products are one-time and some are subscriptions, and customers want to negotiate instead of emailing back and forth for a week.
 
-**DealFlow360** is a self-governing deal engine. It doesn't just record a sale — it evaluates every quotation as it's built: checking discount risk against configurable limits, routing approvals automatically, recommending upsells with real margin math, splitting fulfillment across warehouses by live stock, and letting a customer negotiate terms without ever bypassing governance.
+**DealFlow360** handles that mess automatically. As a rep builds a quotation, it checks whether the discount is too high, sends it to the right approver if it is, suggests useful add-ons, works out how to fulfil it from stock, and lets the customer negotiate — without ever letting them sneak past the approval rules.
 
-Every number on screen is computed from real logic, not hardcoded. That's the whole point of the build — see [How it thinks](#how-it-thinks) below.
+Nothing here is hardcoded. Every number you see on screen is calculated live from the data — that's what the next section shows.
+
+<br/>
+
+## Features at a glance
+
+| | |
+|---|---|
+| 🚦 **Discount risk engine** | Flags any discount that breaks the rules, and says exactly why |
+| ✅ **Automatic approvals** | Routes to a Manager, or Manager + Finance, based on how risky the deal is |
+| 🤖 **Upsell suggestions** | Recommends add-ons with real margin numbers, not random guesses |
+| 📦 **Warehouse splitting** | Works out which warehouse ships what, and flags backorders |
+| 💳 **Mixed billing** | Keeps one-time purchases and recurring subscriptions straight on one order |
+| 🤝 **Customer negotiation** | A separate portal where customers can push back on price — safely |
+| 📊 **Live dashboard** | Pipeline value, risk levels, and stalled deals, updated in real time |
+| 📝 **Audit trail** | Every change is logged — who did what, and when |
 
 <br/>
 
@@ -97,26 +112,26 @@ Open **http://localhost:4000**. That's it.
 
 ## How it thinks
 
-This is the part most hackathon demos fake. Here, it's real code.
+This is the part most hackathon demos fake with a hardcoded label. Here it's real math, and it's simple once you see it laid out:
 
-### The blended discount risk score
+<img src="docs/screenshots/risk-example.png" width="100%" alt="Example: a Gold customer's Installation Service discount breaks its category limit, producing a risk score of 64 which routes to Sales Manager then Finance"/>
 
-Every line item is checked against the *stricter* of two limits — the customer's tier ceiling and the product category's ceiling:
+**In plain terms:** each product category (Hardware, Service, Subscription) has its own maximum discount. Each customer tier (Bronze, Silver, Gold) has its own maximum too. A line item is only "safe" if it stays under *both* — whichever is stricter wins.
 
 ```
 allowed% = min(tierLimit[customer.tier], categoryLimit[product.category])
 overage  = max(0, givenDiscount - allowed%)
 ```
 
-A Gold customer gets up to 15% overall — but if Hardware is capped at 15% and Services at 10%, a rep giving 18% off an installation service breaks its own limit even though the customer's tier "allows" more. Every overage across every line is summed into a single 0–100 risk score, which is what actually decides the approval path:
+Add up the overage from every line and you get a risk score out of 100. That score decides what happens next:
 
-| Risk score | Approval required |
+| Risk score | What happens |
 |---|---|
-| 0 | None — auto-approved |
-| 1 – 40 | Sales Manager |
-| 41 – 100 | Sales Manager **then** Finance |
+| 0 | Nothing — auto-approved, no one needs to look at it |
+| 1 – 40 | Goes to the Sales Manager |
+| 41 – 100 | Goes to the Sales Manager, then Finance |
 
-The reason string shown in the UI (`"Service discount exceeds allowed threshold by 8%"`) is generated from the actual offending line — not a canned message.
+Notice a Gold customer is "allowed" 15% overall — but the Installation Service line still gets flagged, because *its own* category limit is 10%. One bad line is enough to flag the whole quotation, even if everything else looks fine. That's the point: a rep can't hide a risky discount inside an otherwise healthy order.
 
 ### Everything else that's real, not decorative
 
@@ -127,6 +142,29 @@ The reason string shown in the UI (`"Service discount exceeds allowed threshold 
 | **Hybrid billing** | Lines are split into one-time vs. recurring by product type, with a computed next billing date based on frequency. |
 | **Customer negotiation** | A counter-discount request re-invokes the same risk engine the rep's builder uses. Same function, same rules — a customer cannot get a better deal than governance allows. |
 | **Audit trail** | Every discount change, submission, approval, rejection, and negotiation writes a real log entry with user, action, timestamp, and old/new values. |
+
+<br/>
+
+## Quotation lifecycle
+
+Every quotation moves through the same states, no matter how it gets there — a rep submitting it or a customer negotiating it both feed into the exact same flow:
+
+```mermaid
+stateDiagram-v2
+    [*] --> Draft
+    Draft --> PendingManager: Submit for approval
+    PendingManager --> PendingFinance: Risk score > 40
+    PendingManager --> Approved: Risk score ≤ 40, approved
+    PendingFinance --> Approved: Finance approves
+    PendingManager --> Rejected: Rejected
+    PendingManager --> Draft: Sent back for revision
+    Approved --> Confirmed: Rep or customer confirms
+    Approved --> PendingManager: Customer negotiates a new discount that breaks the limit
+    Confirmed --> [*]
+    Rejected --> [*]
+```
+
+The loop back from **Approved** to **Pending Manager** is the important one — it's what stops a customer from negotiating their way around the risk engine from the portal.
 
 <br/>
 
