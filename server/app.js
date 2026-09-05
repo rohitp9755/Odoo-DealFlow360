@@ -18,6 +18,7 @@ app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/product-categories', require('./routes/productCategoryRoutes'));
 app.use('/api/product-variants', require('./routes/productVariantRoutes'));
 app.use('/api/product-variant-values', require('./routes/productVariantValueRoutes'));
+app.use('/api/price-lists', require('./routes/priceListRoutes'));
 app.use('/api/quotes', require('./routes/quoteRoutes'));
 app.use('/api/discount-rules', require('./routes/discountRuleRoutes'));
 app.use('/api/approvals', require('./routes/approvalRoutes'));
