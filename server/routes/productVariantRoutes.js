@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const ctrl = require('../controllers/productController');
+const ctrl = require('../controllers/productVariantController');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { ROLES } = require('../config/roles');
 

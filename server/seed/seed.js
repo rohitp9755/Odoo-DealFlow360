@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const ProductCategory = require('../models/ProductCategory');
+const ProductVariant = require('../models/ProductVariant');
+const ProductVariantValue = require('../models/ProductVariantValue');
 const DiscountTier = require('../models/DiscountTier');
 const DiscountRule = require('../models/DiscountRule');
 const ApprovalRule = require('../models/ApprovalRule');
@@ -24,6 +27,7 @@ async function run() {
 
   await Promise.all([
     User.deleteMany({}), Customer.deleteMany({}), Product.deleteMany({}),
+    ProductCategory.deleteMany({}), ProductVariant.deleteMany({}), ProductVariantValue.deleteMany({}),
     DiscountTier.deleteMany({}), DiscountRule.deleteMany({}), ApprovalRule.deleteMany({}),
     Warehouse.deleteMany({}), WarehouseStock.deleteMany({}), SubscriptionPlan.deleteMany({}),
     UpsellRule.deleteMany({}), Quote.deleteMany({}), Negotiation.deleteMany({}), NegotiationMessage.deleteMany({}),
@@ -67,6 +71,13 @@ async function run() {
     { name: 'Yearly Support', cycle: 'yearly', prorationAllowed: true, cancellationRefundPolicy: 'prorated' }
   ]);
 
+  // --- Product categories ---
+  await ProductCategory.insertMany([
+    { name: 'Hardware', description: 'Physical devices and accessories' },
+    { name: 'Software', description: 'Licenses and digital products' },
+    { name: 'Services', description: 'Setup, support, and professional services' }
+  ]);
+
   // --- Products (20+) ---
   const products = await Product.insertMany([
     { name: 'Laptop Pro 14', category: 'Hardware', subCategory: 'Laptops', price: 80000, cost: 58000, tags: ['laptop', 'premium'], promoted: false },
@@ -93,6 +104,13 @@ async function run() {
     { name: 'Yearly Support Plan', category: 'Services', subCategory: 'Support Plans', price: 19200, cost: 7500, tags: ['service', 'support'], isRecurring: true, billingCycle: 'yearly' }
   ]);
   const byName = Object.fromEntries(products.map(p => [p.name, p]));
+
+  // --- A demo variant/value pair, to show the ProductVariant/ProductVariantValue shape ---
+  const colorVariant = await ProductVariant.create({ product: byName['Laptop Pro 14']._id, name: 'Color' });
+  await ProductVariantValue.insertMany([
+    { variant: colorVariant._id, value: 'Space Grey' },
+    { variant: colorVariant._id, value: 'Silver' }
+  ]);
 
   // --- Warehouse stock (deliberately uneven for the split-shipment demo) ---
   const stockPlan = [
