@@ -3,7 +3,7 @@ const Product = require('../models/Product');
 const { getAllowedLineDiscount } = require('./discountEngine');
 const { calculateRisk } = require('./riskEngine');
 
-// Core recalculation function — the single source of truth for quote numbers.
+// Core recalculation function — the single source of truth for quote numbers...
 // Input: customerId, orderDiscount, and raw lines [{ product, quantity, lineDiscount }]
 // Output: fully computed lines + quote-level totals + risk. NEVER trusts client-sent totals.
 async function computeQuote({ customerId, orderDiscount = 0, lines }) {
