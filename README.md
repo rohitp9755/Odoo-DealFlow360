@@ -1,6 +1,38 @@
-# Ink the Deal
+<div align="center">
 
-**Ink the Deal** is a MERN-stack Quote-to-Cash platform that unifies the complete deal lifecycle — from quotation and approval to negotiation, fulfillment, billing, and business insights — into a single connected workflow spanning sales, finance, operations, and customers.
+# 🖋️ Ink the Deal
+
+**A MERN-stack Quote-to-Cash platform that unifies the complete deal lifecycle — from quotation and approval to negotiation, fulfillment, billing, and business insights — into a single connected workflow spanning sales, finance, operations, and customers.**
+
+[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)](#technology-stack)
+[![Express.js](https://img.shields.io/badge/Express.js-000000?style=flat&logo=express&logoColor=white)](#technology-stack)
+[![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)](#technology-stack)
+[![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)](#technology-stack)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](#technology-stack)
+
+*From Quote to Revenue, in one connected workflow.*
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [The Core Idea](#the-core-idea)
+- [Core Features](#core-features)
+- [Complete Deal Lifecycle](#complete-deal-lifecycle)
+- [User Roles](#user-roles)
+- [Frontend Experience](#frontend-experience)
+- [Application Journey](#application-journey)
+- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Core Data Model](#core-data-model)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Recommended Hackathon Demo](#recommended-hackathon-demo)
+- [Security](#security)
+- [Future Scope](#future-scope)
 
 ---
 
@@ -14,6 +46,17 @@ Traditional sales processes rely on disconnected systems for quotations, approva
 Customer → Quotation → Risk Analysis → Approval → AI Negotiation
     → Customer Confirmation → Fulfillment → Subscription / Invoice
     → Deal Health → Business Insights
+```
+
+## The Core Idea
+
+Most systems ask: *"What happened to this deal?"*
+
+**Ink the Deal** aims to answer: *"What happened, what is happening, and what should happen next?"*
+
+```
+QUOTE → RISK → APPROVAL → NEGOTIATION → FULFILLMENT
+    → SUBSCRIPTION / INVOICE → PAYMENT → DEAL HEALTH → INSIGHT
 ```
 
 ---
@@ -121,7 +164,7 @@ QUOTE → RISK ANALYSIS → APPROVAL → AI NEGOTIATION → CUSTOMER CONFIRMATIO
     → DEAL HEALTH → BUSINESS INSIGHTS
 ```
 
-**One platform. One deal. One connected journey.**
+> **One platform. One deal. One connected journey.**
 
 ---
 
@@ -142,7 +185,7 @@ QUOTE → RISK ANALYSIS → APPROVAL → AI NEGOTIATION → CUSTOMER CONFIRMATIO
 
 Ink the Deal is built as a modern enterprise SaaS application using React.js and Tailwind CSS, following a clean, restrained visual system focused on usability and information hierarchy over excessive visual effects.
 
-**Design principles:**
+**Design principles**
 - Minimal and professional interface
 - Soft neutral backgrounds with muted accent colors
 - Clear information hierarchy
@@ -151,7 +194,7 @@ Ink the Deal is built as a modern enterprise SaaS application using React.js and
 - Responsive layouts
 - Purposeful micro-interactions
 
-**Interactive UI elements:**
+**Interactive UI elements**
 - Hover states on cards and navigation
 - Small elevation changes on interactive elements
 - Animated data transitions
@@ -167,28 +210,19 @@ Animations are used to communicate state and hierarchy, not to distract from the
 
 ## Application Journey
 
-The platform is organized into connected screens representing the full business lifecycle:
+The platform is organized into connected screens representing the full business lifecycle — not isolated pages, but one connected business process:
 
-1. Login / Signup
-2. Sales Dashboard
-3. Quotations
-4. Quotation Detail
-5. Approvals
-6. Approval Detail
-7. Fulfillment & Stock
-8. Fulfillment Detail
-9. Subscriptions
-10. Billing Detail
-11. Customer Portal
-12. Invoices
-13. Invoice Detail
-14. Deal Health
-15. Reporting
-16. Product Dashboard
-17. Product Details
-18. Discount Rules
-
-These are not isolated pages — they represent one connected business process.
+| # | Screen | # | Screen |
+|---|---|---|---|
+| 1 | Login / Signup | 10 | Invoices |
+| 2 | Sales Dashboard | 11 | Invoice Detail |
+| 3 | Quotations | 12 | Customer Portal |
+| 4 | Quotation Detail | 13 | Deal Health |
+| 5 | Approvals | 14 | Reporting |
+| 6 | Approval Detail | 15 | Product Dashboard |
+| 7 | Fulfillment & Stock | 16 | Product Details |
+| 8 | Fulfillment Detail | 17 | Discount Rules |
+| 9 | Subscriptions | | |
 
 ---
 
@@ -206,7 +240,7 @@ These are not isolated pages — they represent one connected business process.
 | AI | Risk Analysis & Negotiation Agent |
 | Analytics | Basket Analysis & Deal Insights |
 
-**MERN:**
+**MERN**
 - **M** — MongoDB: Database
 - **E** — Express.js: Backend API
 - **R** — React.js: Frontend
@@ -296,26 +330,26 @@ Ink-the-Deal/
 - MongoDB or MongoDB Atlas
 - Git
 
-### Clone the Repository
+### 1. Clone the repository
 ```bash
 git clone <YOUR_GITHUB_REPOSITORY_URL>
 cd Ink-the-Deal
 ```
 
-### Install Frontend Dependencies
+### 2. Install frontend dependencies
 ```bash
 cd client
 npm install
 ```
 
-### Install Backend Dependencies
+### 3. Install backend dependencies
 In a separate terminal:
 ```bash
 cd server
 npm install
 ```
 
-### Environment Variables
+### 4. Configure environment variables
 Create a `.env` file inside `server/`:
 ```env
 PORT=5000
@@ -324,15 +358,15 @@ JWT_SECRET=your_jwt_secret
 CLIENT_URL=http://localhost:5173
 ```
 
-> **Note:** Do not commit `.env` or database credentials to the repository.
+> ⚠️ **Note:** Do not commit `.env` or database credentials to the repository.
 
-### Start the Backend
+### 5. Start the backend
 ```bash
 cd server
 npm run dev
 ```
 
-### Start the Frontend
+### 6. Start the frontend
 In a separate terminal:
 ```bash
 cd client
@@ -411,23 +445,12 @@ For production deployment, additional controls — HTTPS, rate limiting, stronge
 
 ---
 
-## The Core Idea
-
-Most systems ask: *"What happened to this deal?"*
-
-**Ink the Deal** aims to answer: *"What happened, what is happening, and what should happen next?"*
-
-```
-QUOTE → RISK → APPROVAL → NEGOTIATION → FULFILLMENT
-    → SUBSCRIPTION / INVOICE → PAYMENT → DEAL HEALTH → INSIGHT
-```
-
----
-
 ## Built With
 
 MongoDB · Express.js · React.js · Node.js · Tailwind CSS
 
----
+<div align="center">
 
 **Ink the Deal** — *From Quote to Revenue, in one connected workflow.*
+
+</div>
