@@ -4,14 +4,33 @@
 
 body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 
-.badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
-.badge-low { @apply bg-emerald-100 text-emerald-700; }
-.badge-medium { @apply bg-amber-100 text-amber-700; }
-.badge-high { @apply bg-orange-100 text-orange-700; }
-.badge-very_high { @apply bg-red-100 text-red-700; }
-.card { @apply bg-white rounded-xl shadow-sm border border-slate-200; }
-.btn { @apply px-4 py-2 rounded-lg font-medium text-sm transition-colors; }
-.btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
-.btn-secondary { @apply bg-slate-100 text-slate-700 hover:bg-slate-200; }
-.btn-danger { @apply bg-red-50 text-red-600 hover:bg-red-100; }
-.input { @apply border border-slate-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-brand-400; }
+@layer utilities {
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes spin-slow-reverse {
+    from { transform: rotate(360deg); }
+    to { transform: rotate(0deg); }
+  }
+  .animate-spin-slow {
+    animation: spin-slow 60s linear infinite;
+  }
+  .animate-spin-slow-reverse {
+    animation: spin-slow-reverse 60s linear infinite;
+  }
+}
+
+@layer components {
+  .badge { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
+  .badge-low { @apply bg-emerald-100 text-emerald-700; }
+  .badge-medium { @apply bg-amber-100 text-amber-700; }
+  .badge-high { @apply bg-orange-100 text-orange-700; }
+  .badge-very_high { @apply bg-red-100 text-red-700; }
+  .card { @apply bg-white rounded-xl shadow-sm border border-slate-200; }
+  .btn { @apply px-4 py-2 rounded-lg font-medium text-sm transition-colors; }
+  .btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-secondary { @apply bg-slate-100 text-slate-700 hover:bg-slate-200; }
+  .btn-danger { @apply bg-red-50 text-red-600 hover:bg-red-100; }
+  .input { @apply border border-slate-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-brand-400; }
+}
