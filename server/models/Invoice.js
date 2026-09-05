@@ -8,7 +8,8 @@ const InvoiceSchema = new mongoose.Schema({
   periodEnd: Date,
   amount: { type: Number, required: true },
   proratedAmount: { type: Number },
-  status: { type: String, enum: ['draft', 'issued', 'paid', 'refunded', 'cancelled'], default: 'draft' },
+  status: { type: String, enum: ['draft', 'issued', 'partially_paid', 'paid', 'refunded', 'cancelled'], default: 'draft' },
+  paidAmount: { type: Number, default: 0 }, // cumulative across all recorded payments
   paidAt: Date
 }, { timestamps: true });
 
