@@ -139,17 +139,52 @@ async function counterOffer(req, res, next) {
         lines: computed.lines, subtotal: computed.subtotal, discountAmount: computed.discountAmount,
         total: computed.total, totalCost: computed.totalCost, margin: computed.margin,
         marginPercent: computed.marginPercent, riskScore: computed.riskScore, riskBand: computed.riskBand,
-        marginLeakage: computed.marginLeakage, stage: 'sent'
+        marginLeakage: computed.marginLeakage
       });
+
+      // recommendedDiscount is capped at the customer's TIER autonomous limit
+      // (see negotiationEngine.decideOutcome), but a line's category ceiling can
+      // be stricter than the tier limit — computeQuote/riskEngine account for
+      // that per line. Never blindly send the quote onward: recompute the
+      // headline discount the same way submit() does and re-run it through the
+      // approval engine, so a category-ceiling violation still routes to
+      // manager/finance instead of silently reaching the customer as 'sent'.
+      const totalLineValue = computed.lines.reduce((s, l) => s + l.subtotal, 0);
+      const weighted = computed.lines.reduce((s, l) => s + l.lineDiscount * l.subtotal, 0);
+      const headlineDiscount = totalLineValue > 0 ? weighted / totalLineValue : 0;
+
+      const quoteForApproval = {
+        _id: quote._id, riskScore: computed.riskScore, riskBand: computed.riskBand,
+        marginLeakage: computed.marginLeakage, reasons: computed.reasons
+      };
+      const { requiresApproval, approval } = await evaluateAndRouteApproval(quoteForApproval, req.user, headlineDiscount);
+      // evaluateAndRouteApproval persists stage via a direct findByIdAndUpdate
+      // on the DB, not on this in-memory document — mirror it here too so the
+      // response body and this document's own save() aren't left stale.
+      quote.stage = requiresApproval ? 'pending_approval' : 'sent';
       await quote.save();
 
       offer.status = 'accepted';
+      if (approval) offer.approval = approval._id;
       negotiation.status = 'resolved';
       await negotiation.save();
 
-      await logAudit({ user: req.user, action: 'NEGOTIATION_OFFER_ACCEPTED', entity: 'Quote', entityId: quote._id, newValue: { discount: discountToApply } });
+      await logAudit({
+        user: req.user, action: 'NEGOTIATION_OFFER_ACCEPTED', entity: 'Quote', entityId: quote._id,
+        newValue: { discount: discountToApply, requiresApproval }
+      });
 
-      return res.json({ quote, offer });
+      if (requiresApproval) {
+        const followUp = await NegotiationMessage.create({
+          role: 'system',
+          content: `Your accepted terms (${discountToApply}%) require manager/finance approval before the quote can be sent. We'll notify you once it's resolved.`,
+          intent: 'APPROVAL_SUBMITTED'
+        });
+        negotiation.messages.push(followUp._id);
+        await negotiation.save();
+      }
+
+      return res.json({ quote, offer, approval, requiresApproval });
     }
 
     if (action === 'request_approval') {

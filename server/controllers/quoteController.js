@@ -120,9 +120,10 @@ async function submit(req, res, next) {
 
     const { requiresApproval, approval } = await evaluateAndRouteApproval(quoteForApproval, req.user, headlineDiscount);
 
-    if (!requiresApproval) {
-      quote.stage = 'approved';
-    }
+    // evaluateAndRouteApproval persists stage via a direct findByIdAndUpdate
+    // on the DB, not on this in-memory document — mirror it here too so the
+    // response body and this document's own save() aren't left stale.
+    quote.stage = requiresApproval ? 'pending_approval' : 'approved';
     await quote.save();
 
     res.json({ quote, requiresApproval, approval, headlineDiscount: round2(headlineDiscount) });
