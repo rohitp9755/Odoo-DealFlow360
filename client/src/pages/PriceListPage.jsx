@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Trash2, Power, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Power } from 'lucide-react';
 import api from '../services/api';
-import Layout from '../components/Layout';
+import Modal from '../components/Modal';
 
 const TIERS = ['Bronze', 'Silver', 'Gold'];
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'];
@@ -166,13 +166,7 @@ export default function PriceListPage() {
       {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
 
       {formOpen && (
-        <div className="card p-6 max-w-2xl mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-slate-800">{editingId ? 'Edit Price Rule' : 'New Price Rule'}</h2>
-            <button onClick={closeForm} className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100">
-              <X size={16} />
-            </button>
-          </div>
+        <Modal isOpen={formOpen} onClose={closeForm} title={editingId ? 'Edit Price Rule' : 'New Price Rule'}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -241,7 +235,7 @@ export default function PriceListPage() {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
 
       <div className="card overflow-hidden">
