@@ -146,22 +146,40 @@ async function run() {
     { baseProduct: byName['Workstation X1']._id, recommendedProduct: byName['Design Suite Pro']._id, weight: 0.75 }
   ]);
 
-  // --- Customers ---
-  const [acme, nova, vertex] = await Customer.insertMany([
-    { name: 'Acme Technologies', tier: 'Gold', email: 'buyer@acme.example', phone: '+91-9800000001', billingAddress: 'Mumbai, India', repHistoricalAvgDiscount: 9 },
-    { name: 'Nova Systems', tier: 'Silver', email: 'procurement@novasystems.example', phone: '+91-9800000002', billingAddress: 'Bangalore, India', repHistoricalAvgDiscount: 6 },
-    { name: 'Vertex Retail', tier: 'Bronze', email: 'ops@vertexretail.example', phone: '+91-9800000003', billingAddress: 'Delhi, India', repHistoricalAvgDiscount: 4 }
-  ]);
-
-  // --- Users ---
-  const users = await User.create([
+  // --- Internal users (created before customers so we can assign a rep) ---
+  const [repUser, managerUser, financeUser, adminUser] = await User.create([
     { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: ROLES.SALES_REP },
     { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: ROLES.SALES_MANAGER },
     { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: ROLES.FINANCE },
-    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: ROLES.ADMIN },
-    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: ROLES.CUSTOMER, customer: acme._id }
+    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: ROLES.ADMIN }
   ]);
-  const rep = users.find(u => u.role === ROLES.SALES_REP);
+  const rep = repUser;
+
+  // --- Customers ---
+  const [acme, nova, vertex] = await Customer.insertMany([
+    {
+      name: 'Acme Technologies', tier: 'Gold', email: 'buyer@acme.example', phone: '+91-9800000001',
+      billingAddress: { street: '221 MG Road', city: 'Mumbai', state: 'MH', postalCode: '400001', country: 'India' },
+      shippingAddress: { street: '221 MG Road', city: 'Mumbai', state: 'MH', postalCode: '400001', country: 'India' },
+      shippingSameAsBilling: true, assignedRep: rep._id, status: 'active', repHistoricalAvgDiscount: 9
+    },
+    {
+      name: 'Nova Systems', tier: 'Silver', email: 'procurement@novasystems.example', phone: '+91-9800000002',
+      billingAddress: { street: '12 Residency Road', city: 'Bangalore', state: 'KA', postalCode: '560025', country: 'India' },
+      shippingAddress: { street: '12 Residency Road', city: 'Bangalore', state: 'KA', postalCode: '560025', country: 'India' },
+      shippingSameAsBilling: true, assignedRep: rep._id, status: 'active', repHistoricalAvgDiscount: 6
+    },
+    {
+      name: 'Vertex Retail', tier: 'Bronze', email: 'ops@vertexretail.example', phone: '+91-9800000003',
+      billingAddress: { street: '45 Connaught Place', city: 'Delhi', state: 'DL', postalCode: '110001', country: 'India' },
+      shippingAddress: { street: '45 Connaught Place', city: 'Delhi', state: 'DL', postalCode: '110001', country: 'India' },
+      shippingSameAsBilling: true, assignedRep: rep._id, status: 'active', repHistoricalAvgDiscount: 4
+    }
+  ]);
+
+  // --- Customer portal user (must come after the Customer it links to) ---
+  const buyerUser = await User.create({ name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: ROLES.CUSTOMER, customer: acme._id });
+  const users = [repUser, managerUser, financeUser, adminUser, buyerUser];
 
   // --- Demo Quote 1: Acme, multi-product, discount ABOVE threshold -> triggers approval ---
   const demoLines1 = [

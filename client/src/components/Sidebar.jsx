@@ -1,24 +1,28 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, Package, Boxes, Tags } from 'lucide-react';
+import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, Package, Boxes, Tags, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LINKS_BY_ROLE = {
   SALES_REP: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/quotes', label: 'Quotes', icon: FileText }
+    { to: '/quotes', label: 'Quotes', icon: FileText },
+    { to: '/customers', label: 'Customers', icon: Users }
   ],
   SALES_MANAGER: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/customers', label: 'Customers', icon: Users },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck }
   ],
   FINANCE: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/customers', label: 'Customers', icon: Users },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck }
   ],
   ADMIN: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/quotes', label: 'Quotes', icon: FileText },
+    { to: '/customers', label: 'Customers', icon: Users },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck },
     { to: '/admin/products', label: 'Products', icon: Boxes },
     { to: '/admin/price-lists', label: 'Price Lists', icon: Tags },
