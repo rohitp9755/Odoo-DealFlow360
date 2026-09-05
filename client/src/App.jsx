@@ -14,6 +14,7 @@ import AdminSettingsPage from './pages/AdminSettingsPage';
 import CustomerPortalPage from './pages/CustomerPortalPage';
 import ProductListPage from './pages/ProductListPage';
 import ProductFormPage from './pages/ProductFormPage';
+import PriceListPage from './pages/PriceListPage';
 
 export default function App() {
   const { user } = useAuth();
@@ -70,6 +71,12 @@ export default function App() {
       <Route path="/admin/products/:id" element={
         <ProtectedRoute roles={['ADMIN']}>
           <ProductFormPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/price-lists" element={
+        <ProtectedRoute roles={['ADMIN']}>
+          <PriceListPage />
         </ProtectedRoute>
       } />
 
