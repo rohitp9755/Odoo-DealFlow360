@@ -12,6 +12,8 @@ import ApprovalDashboard from './pages/ApprovalDashboard';
 import ExecutiveDashboard from './pages/ExecutiveDashboard';
 import AdminSettingsPage from './pages/AdminSettingsPage';
 import CustomerPortalPage from './pages/CustomerPortalPage';
+import ProductListPage from './pages/ProductListPage';
+import ProductFormPage from './pages/ProductFormPage';
 
 export default function App() {
   const { user } = useAuth();
@@ -52,6 +54,22 @@ export default function App() {
       <Route path="/admin" element={
         <ProtectedRoute roles={['ADMIN']}>
           <AdminSettingsPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/admin/products" element={
+        <ProtectedRoute roles={['ADMIN']}>
+          <ProductListPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/products/new" element={
+        <ProtectedRoute roles={['ADMIN']}>
+          <ProductFormPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/products/:id" element={
+        <ProtectedRoute roles={['ADMIN']}>
+          <ProductFormPage />
         </ProtectedRoute>
       } />
 
