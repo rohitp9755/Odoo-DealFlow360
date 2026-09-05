@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import QuoteListPage from './pages/QuoteListPage';
 import NewQuotePage from './pages/NewQuotePage';
 import QuoteDetailPage from './pages/QuoteDetailPage';
@@ -18,6 +19,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
 
       <Route path="/dashboard" element={
         <ProtectedRoute roles={['SALES_REP', 'SALES_MANAGER', 'FINANCE', 'ADMIN']}>
