@@ -6,6 +6,8 @@ const { extractRequestedDiscount, buildContext, decideOutcome, phraseCustomerMes
 const { evaluateAndRouteApproval } = require('../services/approvalEngine');
 const { computeQuote } = require('../services/quoteCalculator');
 const { logAudit } = require('../services/auditService');
+const { notify } = require('../services/notificationService');
+const { ROLES } = require('../config/roles');
 
 async function getOrCreateNegotiation(quoteId, customerId) {
   let negotiation = await Negotiation.findOne({ quote: quoteId });
@@ -15,8 +17,30 @@ async function getOrCreateNegotiation(quoteId, customerId) {
   return negotiation;
 }
 
+// Negotiation is reachable by both the internal quote workspace and the customer
+// portal chat off the SAME routes, with no role restriction in negotiationRoutes.js.
+// Without this check any authenticated CUSTOMER could read or negotiate on ANY
+// other customer's quote by guessing/enumerating quoteIds — customerId/quoteId
+// ownership must always be checked against the authenticated session, not trusted
+// from the URL.
+async function loadQuoteWithAccessCheck(quoteId, user) {
+  const quote = await Quote.findById(quoteId).populate('customer');
+  if (!quote) {
+    const err = new Error('Quote not found');
+    err.status = 404;
+    throw err;
+  }
+  if (user.role === ROLES.CUSTOMER && String(quote.customer._id) !== String(user.customer)) {
+    const err = new Error('Forbidden');
+    err.status = 403;
+    throw err;
+  }
+  return quote;
+}
+
 async function getForQuote(req, res, next) {
   try {
+    await loadQuoteWithAccessCheck(req.params.quoteId, req.user);
     const negotiation = await Negotiation.findOne({ quote: req.params.quoteId }).populate('messages');
     if (!negotiation) return res.json({ messages: [], offers: [], status: 'open' });
     res.json(negotiation);
@@ -28,8 +52,7 @@ async function getForQuote(req, res, next) {
 // The LLM is NEVER allowed to change numbers; see negotiationEngine.js for the guardrail.
 async function sendMessage(req, res, next) {
   try {
-    const quote = await Quote.findById(req.params.quoteId).populate('customer');
-    if (!quote) return res.status(404).json({ message: 'Quote not found' });
+    const quote = await loadQuoteWithAccessCheck(req.params.quoteId, req.user);
 
     const { message } = req.body;
     if (!message || !message.trim()) return res.status(400).json({ message: 'Message is required' });
@@ -64,6 +87,16 @@ async function sendMessage(req, res, next) {
       negotiation.offers.push(offer);
       quote.stage = 'under_negotiation';
       await quote.save();
+
+      if (req.user.role === ROLES.CUSTOMER) {
+        await notify({
+          recipients: [quote.rep],
+          type: 'NEGOTIATION_REQUEST',
+          message: `${quote.customer.name} requested a ${requestedDiscount}% discount on quote ${quote._id}.`,
+          entity: 'Quote',
+          entityId: quote._id
+        });
+      }
     }
 
     const agentMsg = await NegotiationMessage.create({
@@ -89,8 +122,7 @@ async function sendMessage(req, res, next) {
 async function counterOffer(req, res, next) {
   try {
     const { offerId, action } = req.body; // action: 'accept' | 'request_approval'
-    const quote = await Quote.findById(req.params.quoteId).populate('customer');
-    if (!quote) return res.status(404).json({ message: 'Quote not found' });
+    const quote = await loadQuoteWithAccessCheck(req.params.quoteId, req.user);
 
     const negotiation = await Negotiation.findOne({ quote: quote._id });
     if (!negotiation) return res.status(404).json({ message: 'Negotiation not found' });
@@ -107,17 +139,52 @@ async function counterOffer(req, res, next) {
         lines: computed.lines, subtotal: computed.subtotal, discountAmount: computed.discountAmount,
         total: computed.total, totalCost: computed.totalCost, margin: computed.margin,
         marginPercent: computed.marginPercent, riskScore: computed.riskScore, riskBand: computed.riskBand,
-        marginLeakage: computed.marginLeakage, stage: 'sent'
+        marginLeakage: computed.marginLeakage
       });
+
+      // recommendedDiscount is capped at the customer's TIER autonomous limit
+      // (see negotiationEngine.decideOutcome), but a line's category ceiling can
+      // be stricter than the tier limit — computeQuote/riskEngine account for
+      // that per line. Never blindly send the quote onward: recompute the
+      // headline discount the same way submit() does and re-run it through the
+      // approval engine, so a category-ceiling violation still routes to
+      // manager/finance instead of silently reaching the customer as 'sent'.
+      const totalLineValue = computed.lines.reduce((s, l) => s + l.subtotal, 0);
+      const weighted = computed.lines.reduce((s, l) => s + l.lineDiscount * l.subtotal, 0);
+      const headlineDiscount = totalLineValue > 0 ? weighted / totalLineValue : 0;
+
+      const quoteForApproval = {
+        _id: quote._id, riskScore: computed.riskScore, riskBand: computed.riskBand,
+        marginLeakage: computed.marginLeakage, reasons: computed.reasons
+      };
+      const { requiresApproval, approval } = await evaluateAndRouteApproval(quoteForApproval, req.user, headlineDiscount);
+      // evaluateAndRouteApproval persists stage via a direct findByIdAndUpdate
+      // on the DB, not on this in-memory document — mirror it here too so the
+      // response body and this document's own save() aren't left stale.
+      quote.stage = requiresApproval ? 'pending_approval' : 'sent';
       await quote.save();
 
       offer.status = 'accepted';
+      if (approval) offer.approval = approval._id;
       negotiation.status = 'resolved';
       await negotiation.save();
 
-      await logAudit({ user: req.user, action: 'NEGOTIATION_OFFER_ACCEPTED', entity: 'Quote', entityId: quote._id, newValue: { discount: discountToApply } });
+      await logAudit({
+        user: req.user, action: 'NEGOTIATION_OFFER_ACCEPTED', entity: 'Quote', entityId: quote._id,
+        newValue: { discount: discountToApply, requiresApproval }
+      });
 
-      return res.json({ quote, offer });
+      if (requiresApproval) {
+        const followUp = await NegotiationMessage.create({
+          role: 'system',
+          content: `Your accepted terms (${discountToApply}%) require manager/finance approval before the quote can be sent. We'll notify you once it's resolved.`,
+          intent: 'APPROVAL_SUBMITTED'
+        });
+        negotiation.messages.push(followUp._id);
+        await negotiation.save();
+      }
+
+      return res.json({ quote, offer, approval, requiresApproval });
     }
 
     if (action === 'request_approval') {

@@ -15,6 +15,9 @@ import CustomerPortalPage from './pages/CustomerPortalPage';
 import ProductListPage from './pages/ProductListPage';
 import ProductFormPage from './pages/ProductFormPage';
 import PriceListPage from './pages/PriceListPage';
+import CustomerListPage from './pages/CustomerListPage';
+import CustomerFormPage from './pages/CustomerFormPage';
+import CustomerDetailPage from './pages/CustomerDetailPage';
 
 export default function App() {
   const { user } = useAuth();
@@ -43,6 +46,27 @@ export default function App() {
       <Route path="/quotes/:id" element={
         <ProtectedRoute roles={['SALES_REP', 'SALES_MANAGER', 'FINANCE', 'ADMIN']}>
           <QuoteDetailPage />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/customers" element={
+        <ProtectedRoute roles={['SALES_REP', 'SALES_MANAGER', 'FINANCE', 'ADMIN']}>
+          <CustomerListPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/customers/new" element={
+        <ProtectedRoute roles={['SALES_REP', 'ADMIN']}>
+          <CustomerFormPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/customers/:id/edit" element={
+        <ProtectedRoute roles={['SALES_REP', 'ADMIN']}>
+          <CustomerFormPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/customers/:id" element={
+        <ProtectedRoute roles={['SALES_REP', 'SALES_MANAGER', 'FINANCE', 'ADMIN']}>
+          <CustomerDetailPage />
         </ProtectedRoute>
       } />
 

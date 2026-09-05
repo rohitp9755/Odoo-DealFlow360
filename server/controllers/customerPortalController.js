@@ -1,5 +1,6 @@
 const Quote = require('../models/Quote');
 const { logAudit } = require('../services/auditService');
+const { notify } = require('../services/notificationService');
 const { ROLES } = require('../config/roles');
 
 // Strips every field a customer must never see: cost, margin, risk, internal
@@ -63,6 +64,13 @@ async function confirmQuote(req, res, next) {
     await quote.save();
 
     await logAudit({ user: req.user, action: 'QUOTE_CONFIRMED_BY_CUSTOMER', entity: 'Quote', entityId: quote._id });
+    await notify({
+      recipients: [quote.rep],
+      type: 'QUOTE_CONFIRMED',
+      message: `Customer confirmed quote ${quote._id}.`,
+      entity: 'Quote',
+      entityId: quote._id
+    });
     res.json(sanitizeQuote(quote));
   } catch (err) { next(err); }
 }

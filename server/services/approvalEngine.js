@@ -3,6 +3,17 @@ const Approval = require('../models/Approval');
 const Quote = require('../models/Quote');
 const config = require('../config/businessConfig');
 const { logAudit } = require('./auditService');
+const { notify, notifyRoles } = require('./notificationService');
+const { ROLES } = require('../config/roles');
+
+// Approval.steps.role vocabulary ('manager'/'finance'/'escalation') mapped to the
+// internal User roles that should be notified when a step becomes pending.
+// 'escalation' has no dedicated User role in this system, so it routes to ADMIN.
+const STEP_ROLE_TO_USER_ROLES = {
+  manager: [ROLES.SALES_MANAGER],
+  finance: [ROLES.FINANCE],
+  escalation: [ROLES.ADMIN]
+};
 
 // Given a headline discount %, determine which approver roles are required.
 // Reads admin-configured ApprovalRule ranges first; falls back to businessConfig thresholds.
@@ -58,6 +69,16 @@ async function evaluateAndRouteApproval(quote, requestedBy, headlineDiscount) {
     reason: reasons.join('; ')
   });
 
+  const notifyTargetRoles = [...new Set(approversRequired.flatMap((r) => STEP_ROLE_TO_USER_ROLES[r] || []))];
+  if (notifyTargetRoles.length > 0) {
+    await notifyRoles(notifyTargetRoles, {
+      type: 'APPROVAL_REQUIRED',
+      message: `Quote ${quote._id} needs ${approversRequired.join(' + ')} approval (blended discount ${round2(headlineDiscount)}%).`,
+      entity: 'Approval',
+      entityId: approval._id
+    });
+  }
+
   return { requiresApproval: true, approval };
 }
 
@@ -87,14 +108,17 @@ async function actOnApproval(approvalId, role, action, actingUser, comment) {
   step.actedAt = new Date();
   step.comment = comment;
 
+  let resolved = null;
   if (action === 'reject') {
     approval.status = 'rejected';
     approval.resolvedAt = new Date();
     await Quote.findByIdAndUpdate(approval.quote, { stage: 'rejected' });
+    resolved = 'rejected';
   } else if (approval.steps.every(s => s.status === 'approved')) {
     approval.status = 'approved';
     approval.resolvedAt = new Date();
     await Quote.findByIdAndUpdate(approval.quote, { stage: 'approved' });
+    resolved = 'approved';
   }
 
   await approval.save();
@@ -108,6 +132,18 @@ async function actOnApproval(approvalId, role, action, actingUser, comment) {
     newValue: { status: step.status },
     reason: comment
   });
+
+  if (resolved) {
+    await notify({
+      recipients: [approval.requestedBy],
+      type: resolved === 'approved' ? 'APPROVAL_APPROVED' : 'APPROVAL_REJECTED',
+      message: resolved === 'approved'
+        ? `Quote ${approval.quote} has been fully approved.`
+        : `Quote ${approval.quote} was rejected by ${role}.${comment ? ` Reason: ${comment}` : ''}`,
+      entity: 'Quote',
+      entityId: approval.quote
+    });
+  }
 
   return approval;
 }
@@ -130,6 +166,14 @@ async function returnForRevision(approvalId, actingUser, comment) {
     entity: 'Approval',
     entityId: approval._id,
     reason: comment
+  });
+
+  await notify({
+    recipients: [approval.requestedBy],
+    type: 'APPROVAL_RETURNED',
+    message: `Quote ${approval.quote} was returned for revision.${comment ? ` Reason: ${comment}` : ''}`,
+    entity: 'Quote',
+    entityId: approval.quote
   });
 
   return approval;

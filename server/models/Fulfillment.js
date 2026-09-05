@@ -19,7 +19,13 @@ const FulfillmentSchema = new mongoose.Schema({
   backorders: [BackorderSchema],
   totalShippingCost: { type: Number, default: 0 },
   shipmentCount: { type: Number, default: 0 },
-  overridden: { type: Boolean, default: false }
+  overridden: { type: Boolean, default: false },
+  // Preserves the last SYSTEM-recommended plan the first time a manual
+  // override replaces it, so the automatic recommendation is never lost.
+  originalAllocations: [AllocationSchema],
+  overriddenBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  overriddenAt: Date,
+  overrideReason: String
 }, { timestamps: true });
 
 module.exports = mongoose.model('Fulfillment', FulfillmentSchema);

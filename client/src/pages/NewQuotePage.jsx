@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Trash2 } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Plus, Trash2, UserPlus } from 'lucide-react';
 import api from '../services/api';
 import Layout from '../components/Layout';
+import CustomerPicker from '../components/CustomerPicker';
 
 export default function NewQuotePage() {
   const [customers, setCustomers] = useState([]);
@@ -12,10 +13,16 @@ export default function NewQuotePage() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    api.get('/customers').then((res) => setCustomers(res.data));
+    api.get('/customers?status=active').then((res) => {
+      setCustomers(res.data);
+      const preselect = searchParams.get('customer');
+      if (preselect && res.data.some((c) => c._id === preselect)) setCustomerId(preselect);
+    });
     api.get('/products').then((res) => setProducts(res.data));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateLine(i, field, value) {
@@ -50,13 +57,15 @@ export default function NewQuotePage() {
       <h1 className="text-xl font-bold text-slate-800 mb-6">New Quotation</h1>
       <div className="card p-6 max-w-3xl space-y-5">
         <div>
-          <label className="text-xs font-medium text-slate-600">Customer</label>
-          <select className="input mt-1" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-            <option value="">Select a customer…</option>
-            {customers.map((c) => (
-              <option key={c._id} value={c._id}>{c.name} ({c.tier})</option>
-            ))}
-          </select>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-slate-600">Customer</label>
+            <Link to="/customers/new" className="text-xs text-brand-600 flex items-center gap-1 font-medium">
+              <UserPlus size={13} /> New customer
+            </Link>
+          </div>
+          <div className="mt-1">
+            <CustomerPicker customers={customers} value={customerId} onChange={setCustomerId} />
+          </div>
         </div>
 
         <div>
