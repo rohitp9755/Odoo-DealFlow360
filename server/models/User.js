@@ -12,7 +12,11 @@ const UserSchema = new mongoose.Schema({
     trim: true,
     match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email address']
   },
-  password: { type: String, required: true, minlength: [8, 'Password must be at least 8 characters'] },
+  password: { 
+    type: String, 
+    required: function() { return this.authProvider === 'local'; },
+    minlength: [8, 'Password must be at least 8 characters'] 
+  },
   role: { type: String, enum: ALL_ROLES, required: true },
   // Required only for CUSTOMER-role accounts, which must link to an existing Customer record.
   customer: {
@@ -20,7 +24,16 @@ const UserSchema = new mongoose.Schema({
     ref: 'Customer',
     required: function () { return this.role === ROLES.CUSTOMER; }
   },
-  active: { type: Boolean, default: true }
+  active: { type: Boolean, default: true },
+  
+  // New Authentication Fields
+  authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+  googleId: { type: String },
+  emailVerified: { type: Boolean, default: false },
+  verificationTokenHash: { type: String },
+  verificationTokenExpiry: { type: Date },
+  resetTokenHash: { type: String },
+  resetTokenExpiry: { type: Date }
 }, { timestamps: true });
 
 UserSchema.methods.comparePassword = function (candidate) {

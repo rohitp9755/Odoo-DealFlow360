@@ -155,11 +155,11 @@ async function run() {
 
   // --- Users ---
   const users = await User.create([
-    { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: ROLES.SALES_REP },
-    { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: ROLES.SALES_MANAGER },
-    { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: ROLES.FINANCE },
-    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: ROLES.ADMIN },
-    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: ROLES.CUSTOMER, customer: acme._id }
+    { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: ROLES.SALES_REP, emailVerified: true },
+    { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: ROLES.SALES_MANAGER, emailVerified: true },
+    { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: ROLES.FINANCE, emailVerified: true },
+    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: ROLES.ADMIN, emailVerified: true },
+    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: ROLES.CUSTOMER, customer: acme._id, emailVerified: true }
   ]);
   const rep = users.find(u => u.role === ROLES.SALES_REP);
 

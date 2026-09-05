@@ -5,6 +5,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import VerificationPendingPage from './pages/VerificationPendingPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import QuoteListPage from './pages/QuoteListPage';
 import NewQuotePage from './pages/NewQuotePage';
 import QuoteDetailPage from './pages/QuoteDetailPage';
@@ -21,8 +25,12 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-      <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
+      <Route path="/login" element={user && user.emailVerified !== false ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
+      <Route path="/signup" element={user && user.emailVerified !== false ? <Navigate to="/dashboard" replace /> : <SignupPage />} />
+      <Route path="/verification-pending" element={<VerificationPendingPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route path="/dashboard" element={
         <ProtectedRoute roles={['SALES_REP', 'SALES_MANAGER', 'FINANCE', 'ADMIN']}>

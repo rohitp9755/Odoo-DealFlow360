@@ -2,12 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL || '*' }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', service: 'dealflow360-server' }));
