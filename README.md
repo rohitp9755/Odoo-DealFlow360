@@ -1,15 +1,18 @@
-Ink the Deal
+# Ink the Deal
 
 Ink the Deal is a MERN-stack Quote-to-Cash platform that connects the complete deal lifecycle — from quotation and approval to negotiation, fulfillment, billing, and business insights.
 
 It brings sales, finance, operations, and customers into one connected workflow.
 
-Overview
+---
+
+## Overview
 
 Traditional sales processes often use separate systems for quotations, approvals, customer communication, inventory, and billing. This creates delays, manual work, and limited visibility.
 
-Ink the Deal connects the entire process around a single deal.
+**Ink the Deal connects the entire process around a single deal.**
 
+```text
 Customer
    ↓
 Quotation
