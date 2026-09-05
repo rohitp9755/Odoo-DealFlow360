@@ -1,84 +1,313 @@
-# DealFlow360
+<div align="center">
 
-An intelligent, self-governing B2B sales operations platform built for a 24-hour hackathon.
+<img src="docs/screenshots/hero-banner.png" width="100%" alt="DealFlow360 — an intelligent, self-governing sales operations platform"/>
 
-## Run it
+<br/><br/>
 
-```
+![Node](https://img.shields.io/badge/Node.js-18%2B-339933?style=flat-square&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.x-000000?style=flat-square&logo=express&logoColor=white)
+![Frontend](https://img.shields.io/badge/Frontend-Vanilla%20JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![No Build Step](https://img.shields.io/badge/Build%20Step-None-2DD4BF?style=flat-square)
+![Database](https://img.shields.io/badge/Database-In--Memory-8B7CF6?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+
+[Quick start](#quick-start) • [Screenshots](#screenshots) • [How it thinks](#how-it-thinks) • [Architecture](#architecture) • [API reference](#api-reference) • [Demo script](#demo-script)
+
+</div>
+
+<br/>
+
+## What this is
+
+Most sales tools handle the basics: create a quote, confirm an order, invoice it. Real B2B sales is messier — multi-level discount approvals, stock spread across warehouses, subscriptions bundled with one-time hardware, and customers who want to negotiate instead of emailing back and forth.
+
+**DealFlow360** is a self-governing deal engine. It doesn't just record a sale — it evaluates every quotation as it's built: checking discount risk against configurable limits, routing approvals automatically, recommending upsells with real margin math, splitting fulfillment across warehouses by live stock, and letting a customer negotiate terms without ever bypassing governance.
+
+Every number on screen is computed from real logic, not hardcoded. That's the whole point of the build — see [How it thinks](#how-it-thinks) below.
+
+<br/>
+
+## Screenshots
+
+<table>
+<tr>
+<td width="38%">
+
+**Sign in**
+Three role-based experiences — Sales Rep, Sales Manager, Finance — each seeing only what's relevant to them.
+
+<img src="docs/screenshots/login.png" width="100%" alt="Login screen with role selection: Sales Representative, Sales Manager, Finance and Operations"/>
+
+</td>
+<td width="62%">
+
+**Dashboard**
+Live KPIs, deal health distribution, and anomaly alerts — all computed from the current state of every quotation, not static numbers.
+
+<img src="docs/screenshots/dashboard.png" width="100%" alt="DealFlow360 dashboard showing revenue pipeline, active deals, deal health bar, and alerts"/>
+
+</td>
+</tr>
+<tr>
+<td width="100%" colspan="2">
+
+**Quotation Builder** — the centerpiece screen
+Add a discount that breaks the category limit and watch the risk score, reason, and approval requirement update instantly. The AI upsell panel on the right recalculates margin the moment a suggestion is added.
+
+<img src="docs/screenshots/quotation-builder.png" width="100%" alt="Quotation builder showing line items, a flagged over-limit discount, risk score, and AI upsell panel"/>
+
+</td>
+</tr>
+<tr>
+<td width="55%">
+
+**Approval Center**
+Every quotation waiting on a decision, with the exact reason it was flagged shown inline — no digging required before approving, rejecting, or sending it back for revision.
+
+<img src="docs/screenshots/approval-center.png" width="100%" alt="Approval center listing two quotations pending manager approval with risk scores and reasons"/>
+
+</td>
+<td width="45%">
+
+**Customer Negotiation Portal**
+A genuinely separate, restricted view. When a customer requests a bigger discount, the risk engine re-runs live — if it breaks the threshold, the deal is kicked back into approval automatically, with no way around it.
+
+<img src="docs/screenshots/customer-portal.png" width="100%" alt="Customer portal showing quotation summary and a discount negotiation request"/>
+
+</td>
+</tr>
+</table>
+
+<br/>
+
+## Quick start
+
+```bash
 cd server
-npm install
 npm start
 ```
 
-Open **http://localhost:4000** in your browser. That's it — one server serves both the API and the frontend, no build step, no database setup.
+Open **http://localhost:4000**. That's it.
 
-Node.js 18+ required. No external services, API keys, or database installation needed — everything runs in memory and reseeds on restart.
+> No `npm install` needed — dependencies are already bundled in `node_modules/`. No `.env` file, no database to provision, no seed script to run separately. The moment the server boots, four customers, seven products, three warehouses, and two in-flight quotations are ready to go.
 
-## What's implemented (and actually computed, not hardcoded)
+**Requirements:** Node.js 18 or later. Nothing else.
 
-- **Discount risk engine** — every line is checked against `min(customer tier limit, product category limit)`. Overage per line is summed into a 0–100 blended risk score, which determines whether the quotation needs no approval, Sales Manager approval, or Sales Manager + Finance approval. The "why" reason string is generated from the actual offending line, not a static message.
-- **Approval workflow** — routes automatically based on the risk score above; approve/reject/request-revision all write real audit log entries.
-- **AI upsell panel** — rule-based co-purchase suggestions (seeded, structured so a real ML model could slot in later) with margin impact computed from each product's actual price/cost.
-- **Warehouse fulfillment split** — greedy allocation across warehouses by live stock levels, with backorder detection when no warehouse has enough.
-- **Hybrid billing** — one-time and recurring lines are split automatically based on product type, with a computed next billing date.
-- **Customer negotiation portal** — a separate, restricted view (`/#/portal/:id`). A customer's counter-discount request re-runs the risk engine live; if it now exceeds the threshold, the quotation is automatically kicked back into the approval workflow — it cannot bypass governance.
-- **Deal health dashboard** — KPIs, risk distribution, and stalled/anomaly alerts computed from the live quotation data, not static numbers.
-- **Audit trail** — every discount change, approval, and negotiation is logged with user, timestamp, and old/new values.
+<br/>
 
-## What's intentionally simplified for the 24h window
+## How it thinks
 
-- No auth/login database — role selection on the login screen is a UI-only demo switch (see `Notes on scope` below).
-- No persistent database — state lives in memory and resets when the server restarts. Swapping in SQLite/Postgres would mean replacing `server/store.js` with real queries; the route and logic layers don't need to change.
-- No subscription proration/cancellation/refund logic, no multi-currency, no notifications system, no admin UI for editing discount tiers (they're configured in `server/data/seed.js`).
-- Warehouse split only applies to physical (Hardware) line items — services and subscriptions aren't warehouse-fulfilled, by design.
+This is the part most hackathon demos fake. Here, it's real code.
+
+### The blended discount risk score
+
+Every line item is checked against the *stricter* of two limits — the customer's tier ceiling and the product category's ceiling:
+
+```
+allowed% = min(tierLimit[customer.tier], categoryLimit[product.category])
+overage  = max(0, givenDiscount - allowed%)
+```
+
+A Gold customer gets up to 15% overall — but if Hardware is capped at 15% and Services at 10%, a rep giving 18% off an installation service breaks its own limit even though the customer's tier "allows" more. Every overage across every line is summed into a single 0–100 risk score, which is what actually decides the approval path:
+
+| Risk score | Approval required |
+|---|---|
+| 0 | None — auto-approved |
+| 1 – 40 | Sales Manager |
+| 41 – 100 | Sales Manager **then** Finance |
+
+The reason string shown in the UI (`"Service discount exceeds allowed threshold by 8%"`) is generated from the actual offending line — not a canned message.
+
+### Everything else that's real, not decorative
+
+| Feature | What's actually computed |
+|---|---|
+| **AI upsell panel** | Margin impact = `product.price - product.cost` for each suggestion, ranked by seeded confidence. Suggestions disappear once added, and the deal's margin recalculates. |
+| **Warehouse split** | Greedy allocation across warehouses ordered by preference, pulling from real per-warehouse stock counts. Backorders are calculated, not assumed. |
+| **Hybrid billing** | Lines are split into one-time vs. recurring by product type, with a computed next billing date based on frequency. |
+| **Customer negotiation** | A counter-discount request re-invokes the same risk engine the rep's builder uses. Same function, same rules — a customer cannot get a better deal than governance allows. |
+| **Audit trail** | Every discount change, submission, approval, rejection, and negotiation writes a real log entry with user, action, timestamp, and old/new values. |
+
+<br/>
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client["Client — vanilla JS SPA, no build step"]
+        UI["Hash-routed views<br/>dashboard · builder · approvals · portal"]
+    end
+
+    subgraph Server["Server — Express"]
+        Routes["Routes<br/>quotations · approvals · portal · dashboard"]
+        Logic["Business logic<br/>riskEngine · upsellEngine · warehouseEngine · billingEngine"]
+        Store["In-memory store<br/>seeded on boot"]
+    end
+
+    UI <--> |"fetch() / JSON"| Routes
+    Routes --> Logic
+    Logic --> Store
+    Store --> Logic
+```
+
+The business logic layer has **zero dependency on Express** — `riskEngine.js`, `upsellEngine.js`, `warehouseEngine.js`, and `billingEngine.js` are pure functions that take data in and return data out. That's deliberate: it means the same risk calculation used by the rep's quotation builder is the exact function re-run when a customer negotiates from the portal, and it means swapping the in-memory store for a real database later only touches `store.js` — nothing in `logic/` or `routes/` needs to change.
+
+<br/>
 
 ## Project structure
 
 ```
 dealflow360/
-├── server/                    Express API + static file server
-│   ├── index.js                Entry point, mounts routes, serves /client
-│   ├── store.js                In-memory data store + audit helper
+├── README.md
+├── docs/
+│   └── screenshots/              Images used in this README
+├── server/                       Express API + static file server
+│   ├── index.js                   Entry point — mounts routes, serves /client
+│   ├── store.js                   In-memory data store + audit helper
 │   ├── data/
-│   │   └── seed.js             Customers, products, warehouses, discount tiers, seed quotations
-│   ├── logic/                  Pure business logic, no Express dependency
-│   │   ├── riskEngine.js        Blended discount risk + approval routing
-│   │   ├── upsellEngine.js      Co-purchase recommendation matching
-│   │   ├── warehouseEngine.js   Stock allocation + backorder detection
-│   │   └── billingEngine.js     One-time vs recurring split
+│   │   └── seed.js                Customers, products, warehouses, discount tiers, seed quotations
+│   ├── logic/                     Pure business logic — no Express dependency
+│   │   ├── riskEngine.js            Blended discount risk + approval routing
+│   │   ├── upsellEngine.js          Co-purchase recommendation matching
+│   │   ├── warehouseEngine.js       Stock allocation + backorder detection
+│   │   └── billingEngine.js         One-time vs. recurring split
 │   └── routes/
-│       ├── masterData.js       Customers / products / warehouses
-│       ├── quotations.js       Quotation CRUD, submit, warehouse split, confirm
-│       ├── approvals.js        Approval center actions
-│       ├── portal.js           Customer-facing negotiation endpoints
-│       └── dashboard.js        Aggregated KPIs and alerts
-└── client/                     No-build vanilla JS SPA
+│       ├── masterData.js          Customers / products / warehouses
+│       ├── quotations.js          Quotation CRUD, submit, warehouse split, confirm
+│       ├── approvals.js           Approval center actions
+│       ├── portal.js              Customer-facing negotiation endpoints
+│       └── dashboard.js           Aggregated KPIs and alerts
+└── client/                        No-build vanilla JS SPA
     ├── index.html
-    ├── css/styles.css          Design system (dark, teal/violet accent)
+    ├── css/
+    │   └── styles.css              Design system — dark theme, teal/violet accents
     └── js/
-        ├── api.js               Fetch wrapper for the API
-        └── app.js                Hash-routed views: dashboard, quotations, builder, approvals, portal
+        ├── api.js                  Fetch wrapper for the API
+        └── app.js                  Hash-routed views
 ```
 
-## Demo script (matches the official test flow)
+<br/>
 
-1. **Login** as Sales Representative → land on the Dashboard.
-2. Go to **Quotations → + New Quotation**, pick a Gold-tier customer (ABC Corp or Global Systems).
-3. Add **Enterprise Laptop** (qty 10, 12% discount) — stays SAFE.
-4. Add **Installation Service** (qty 1, **18%** discount) — instantly flagged OVER LIMIT, risk panel updates live, "why" reason appears.
-5. Accept an **AI upsell recommendation** (e.g. Extended Warranty) — watch the total and margin update.
-6. Click **Submit for Approval** — quotation routes to the Approval Center automatically.
-7. Switch role to **Sales Manager** (top of sidebar → Switch role), go to **Approvals**, approve it (escalates to Finance if the blended risk score is high enough — approve again as Finance).
-8. Back on the quotation, click **Compute Warehouse Split** — see the live stock allocation.
-9. Copy the **Portal Link** and open it (or use the sample link on the login screen) to act as the **customer**: request a bigger discount on a line.
-10. Watch it **automatically re-enter the approval workflow** — go re-approve it.
+## Tech stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| Backend runtime | Node.js (ES modules) | Zero-friction setup, judges can run it anywhere |
+| Backend framework | Express 4 | Minimal, well-understood, fast to wire up in a time crunch |
+| Data layer | In-memory JS objects | No install/provision step; swappable behind `store.js` later |
+| Frontend | Vanilla JS, ES modules | No bundler, no build step — open the file, it runs |
+| Routing | Hand-rolled hash router | ~30 lines, no library needed for 5 views |
+| Styling | Hand-written CSS, custom properties | Full control over the dark theme, no framework CSS to fight |
+| Fonts | Space Grotesk, Inter, JetBrains Mono (Google Fonts) | Distinct type roles for headings, body, and data |
+
+No database, no ORM, no auth library, no TypeScript, no test framework, no CSS framework — all intentional scope cuts for a 24-hour build, documented below.
+
+<br/>
+
+## API reference
+
+<details>
+<summary><strong>Master data</strong></summary>
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/customers` | List all customers |
+| GET | `/api/products` | List all products |
+| GET | `/api/warehouses` | List all warehouses with stock |
+
+</details>
+
+<details>
+<summary><strong>Quotations</strong></summary>
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/quotations` | List all quotations with summary + risk |
+| GET | `/api/quotations/:id` | Full detail — evaluation, upsell, billing, audit log |
+| POST | `/api/quotations` | Create a draft `{ customerId }` |
+| POST | `/api/quotations/:id/lines` | Add a line `{ productId, qty, discount }` |
+| PATCH | `/api/quotations/:id/lines/:lineId` | Update qty/discount |
+| DELETE | `/api/quotations/:id/lines/:lineId` | Remove a line |
+| POST | `/api/quotations/:id/upsell/:productId` | Accept an AI recommendation |
+| POST | `/api/quotations/:id/submit` | Run risk engine, route for approval or auto-approve |
+| POST | `/api/quotations/:id/warehouse-split/accept` | Compute and accept the fulfillment split |
+| POST | `/api/quotations/:id/confirm` | Confirm order, mark invoice paid |
+
+</details>
+
+<details>
+<summary><strong>Approvals</strong></summary>
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/approvals` | List quotations pending a decision |
+| POST | `/api/approvals/:id/decide` | `{ decision: "approve" \| "reject" \| "revise", role, reason }` |
+
+</details>
+
+<details>
+<summary><strong>Customer portal</strong></summary>
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/portal/:id` | Customer-safe view of a quotation |
+| POST | `/api/portal/:id/negotiate` | `{ lineId, requestedDiscount, comment }` — re-runs the risk engine |
+| POST | `/api/portal/:id/confirm` | Customer confirms an approved quotation |
+
+</details>
+
+<details>
+<summary><strong>Dashboard</strong></summary>
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/dashboard` | KPIs, deal health split, alerts, pipeline-by-stage |
+
+</details>
+
+<br/>
+
+## Demo script
+
+This mirrors the official 8-step test flow — run it end to end before presenting.
+
+1. **Login** as Sales Representative → lands on the Dashboard.
+2. **Quotations → + New Quotation** → pick a Gold-tier customer (ABC Corp or Global Systems).
+3. Add **Enterprise Laptop**, qty 10, 12% discount → stays `SAFE`.
+4. Add **Installation Service**, qty 1, **18%** discount → instantly flagged `OVER LIMIT`, risk panel updates live with the reason.
+5. Accept an **AI upsell suggestion** (e.g. Extended Warranty) → total and margin update immediately.
+6. Click **Submit for Approval** → quotation routes automatically.
+7. Switch role to **Sales Manager** → **Approvals** → approve (escalates to Finance if risk is high enough — approve again as Finance).
+8. Back on the quotation, click **Compute Warehouse Split** → see live stock allocation.
+9. Copy the **Portal Link**, open it as the **customer**, request a bigger discount on a line.
+10. Watch it **automatically re-enter the approval workflow** → go re-approve it.
 11. Back in the portal, click **Confirm Quotation**.
-12. Return to the Dashboard — deal health, pipeline stage counts, and alerts all reflect the change in real time.
+12. Return to the **Dashboard** — deal health, pipeline counts, and alerts all reflect the change in real time.
 
-## What we'd build next with more time
+<br/>
 
-- Real persistence (Postgres) and JWT-based auth per role.
-- A trained recommendation model replacing the seeded upsell rules.
-- Subscription proration, cancellation, and credit-note logic.
-- Admin UI for configuring discount tiers and approval chains instead of editing `seed.js`.
-- Notifications (email/Slack) on approval requests and stalled-deal alerts.
+## Scope notes
+
+Built for a 24-hour window — these were deliberate cuts, not oversights:
+
+- **No persistent database.** State lives in memory and resets on restart. Swapping in Postgres/SQLite means rewriting `server/store.js` only — the routes and logic layers are already decoupled from storage.
+- **No auth database.** Role selection on login is a UI-only demo switch.
+- **No proration/refund/cancellation logic** for subscriptions, no multi-currency, no notifications system.
+- **No admin UI** for editing discount tiers or approval chains — they're configured directly in `server/data/seed.js`.
+- **Warehouse split only applies to physical (Hardware) line items** — services and subscriptions aren't warehouse-fulfilled, by design.
+
+### What we'd build next
+
+- Real persistence (Postgres) and JWT-based auth per role
+- A trained recommendation model behind the upsell panel, replacing the seeded rules
+- Subscription proration, cancellation, and credit-note logic
+- Admin UI for discount tiers and approval chains
+- Notifications (email/Slack) on approvals and stalled-deal alerts
+
+<br/>
+
+<div align="center">
+
+Built for a 24-hour hackathon · No frameworks harmed in the making of this frontend
+
+</div>
