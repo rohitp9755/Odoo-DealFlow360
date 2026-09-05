@@ -18,7 +18,7 @@ async function requireAuth(req, res, next) {
   }
 }
 
-// Usage: requireRole('manager', 'finance')
+// Usage: requireRole(ROLES.SALES_MANAGER, ROLES.FINANCE)
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ message: 'Unauthorized' });

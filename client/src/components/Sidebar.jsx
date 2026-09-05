@@ -1,28 +1,29 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, Package } from 'lucide-react';
+import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, Package, Boxes } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LINKS_BY_ROLE = {
-  rep: [
+  SALES_REP: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/quotes', label: 'Quotes', icon: FileText }
   ],
-  manager: [
+  SALES_MANAGER: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck }
   ],
-  finance: [
+  FINANCE: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck }
   ],
-  admin: [
+  ADMIN: [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/quotes', label: 'Quotes', icon: FileText },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck },
+    { to: '/admin/products', label: 'Products', icon: Boxes },
     { to: '/admin', label: 'Admin Settings', icon: Settings }
   ],
-  customer: [
+  CUSTOMER: [
     { to: '/portal', label: 'My Quotes', icon: Package }
   ]
 };

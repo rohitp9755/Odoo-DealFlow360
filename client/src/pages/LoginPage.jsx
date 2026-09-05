@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, Feather, ShoppingCart, BarChart2, Settings, Users, Globe, FileText, ShoppingBag, Cpu, Box, File, Monitor, MessageSquare } from 'lucide-react';
 
@@ -68,8 +68,7 @@ export default function LoginPage() {
     setError('');
     try {
       const user = await login(email, password);
-      // Routing based on user role returned from backend
-      navigate(user.role === 'customer' ? '/portal' : '/dashboard');
+      navigate(user.role === 'CUSTOMER' ? '/portal' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }

@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  category: { type: String, enum: ['Hardware', 'Software', 'Services'], required: true },
+  // References ProductCategory by name (kept denormalized so the existing
+  // discount-ceiling lookups, which are keyed by category name, keep working).
+  category: { type: String, required: true },
   subCategory: String,
   price: { type: Number, required: true },
   cost: { type: Number, required: true },

@@ -4,6 +4,9 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const ProductCategory = require('../models/ProductCategory');
+const ProductVariant = require('../models/ProductVariant');
+const ProductVariantValue = require('../models/ProductVariantValue');
 const DiscountTier = require('../models/DiscountTier');
 const DiscountRule = require('../models/DiscountRule');
 const ApprovalRule = require('../models/ApprovalRule');
@@ -16,6 +19,7 @@ const Negotiation = require('../models/Negotiation');
 const NegotiationMessage = require('../models/NegotiationMessage');
 
 const { computeQuote } = require('../services/quoteCalculator');
+const { ROLES } = require('../config/roles');
 
 async function run() {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -23,6 +27,7 @@ async function run() {
 
   await Promise.all([
     User.deleteMany({}), Customer.deleteMany({}), Product.deleteMany({}),
+    ProductCategory.deleteMany({}), ProductVariant.deleteMany({}), ProductVariantValue.deleteMany({}),
     DiscountTier.deleteMany({}), DiscountRule.deleteMany({}), ApprovalRule.deleteMany({}),
     Warehouse.deleteMany({}), WarehouseStock.deleteMany({}), SubscriptionPlan.deleteMany({}),
     UpsellRule.deleteMany({}), Quote.deleteMany({}), Negotiation.deleteMany({}), NegotiationMessage.deleteMany({}),
@@ -66,6 +71,13 @@ async function run() {
     { name: 'Yearly Support', cycle: 'yearly', prorationAllowed: true, cancellationRefundPolicy: 'prorated' }
   ]);
 
+  // --- Product categories ---
+  await ProductCategory.insertMany([
+    { name: 'Hardware', description: 'Physical devices and accessories' },
+    { name: 'Software', description: 'Licenses and digital products' },
+    { name: 'Services', description: 'Setup, support, and professional services' }
+  ]);
+
   // --- Products (20+) ---
   const products = await Product.insertMany([
     { name: 'Laptop Pro 14', category: 'Hardware', subCategory: 'Laptops', price: 80000, cost: 58000, tags: ['laptop', 'premium'], promoted: false },
@@ -92,6 +104,13 @@ async function run() {
     { name: 'Yearly Support Plan', category: 'Services', subCategory: 'Support Plans', price: 19200, cost: 7500, tags: ['service', 'support'], isRecurring: true, billingCycle: 'yearly' }
   ]);
   const byName = Object.fromEntries(products.map(p => [p.name, p]));
+
+  // --- A demo variant/value pair, to show the ProductVariant/ProductVariantValue shape ---
+  const colorVariant = await ProductVariant.create({ product: byName['Laptop Pro 14']._id, name: 'Color' });
+  await ProductVariantValue.insertMany([
+    { variant: colorVariant._id, value: 'Space Grey' },
+    { variant: colorVariant._id, value: 'Silver' }
+  ]);
 
   // --- Warehouse stock (deliberately uneven for the split-shipment demo) ---
   const stockPlan = [
@@ -136,13 +155,13 @@ async function run() {
 
   // --- Users ---
   const users = await User.create([
-    { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: 'rep' },
-    { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: 'manager' },
-    { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: 'finance' },
-    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: 'admin' },
-    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: 'customer', customer: acme._id }
+    { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: ROLES.SALES_REP },
+    { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: ROLES.SALES_MANAGER },
+    { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: ROLES.FINANCE },
+    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: ROLES.ADMIN },
+    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: ROLES.CUSTOMER, customer: acme._id }
   ]);
-  const rep = users.find(u => u.role === 'rep');
+  const rep = users.find(u => u.role === ROLES.SALES_REP);
 
   // --- Demo Quote 1: Acme, multi-product, discount ABOVE threshold -> triggers approval ---
   const demoLines1 = [
