@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
-import api from '../services/api';
+import Tabs from '../components/Tabs';
 
 const TABS = ['Discount Tiers', 'Category Ceilings', 'Approval Rules', 'Warehouses'];
 
@@ -9,14 +9,7 @@ export default function AdminSettingsPage() {
   return (
     <Layout>
       <h1 className="text-xl font-bold text-slate-800 mb-6">Admin Settings</h1>
-      <div className="flex gap-1.5 mb-6">
-        {TABS.map((t) => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${tab === t ? 'bg-brand-600 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
-            {t}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={TABS} activeTab={tab} onChange={setTab} />
       {tab === 'Discount Tiers' && <DiscountTiersTab />}
       {tab === 'Category Ceilings' && <CategoryCeilingsTab />}
       {tab === 'Approval Rules' && <ApprovalRulesTab />}

@@ -1,16 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Pencil, Trash2, FilePlus2, Mail, Phone, User as UserIcon } from 'lucide-react';
+import {
+  ArrowLeft,
+  Pencil,
+  Trash2,
+  FilePlus2,
+  Mail,
+  Phone,
+  User as UserIcon,
+  MapPin,
+  ShieldCheck,
+  TrendingDown
+} from 'lucide-react';
 import api from '../services/api';
 import Layout from '../components/Layout';
-import StageBadge from '../components/StageBadge';
+import PageHeader from '../components/PageHeader';
+import StatusBadge from '../components/StatusBadge';
+import RiskBadge from '../components/RiskBadge';
+import DataTable from '../components/DataTable';
 import { useAuth } from '../context/AuthContext';
-
-const TIER_STYLES = {
-  Gold: 'bg-amber-100 text-amber-700',
-  Silver: 'bg-slate-200 text-slate-700',
-  Bronze: 'bg-orange-100 text-orange-700'
-};
 
 function formatAddress(a) {
   if (!a) return null;
@@ -41,10 +49,15 @@ export default function CustomerDetailPage() {
     ])
       .then(([c, tiers, q]) => {
         setCustomer(c.data);
-        setTierDiscounts(Object.fromEntries(tiers.data.map((row) => [row.tier, row.autonomousDiscount])));
-        setQuotes(q.data.filter((quote) => String(quote.customer?._id || quote.customer) === id));
+        setTierDiscounts(
+          Object.fromEntries((tiers.data || []).map((row) => [row.tier, row.autonomousDiscount]))
+        );
+        const related = (q.data || []).filter(
+          (quote) => String(quote.customer?._id || quote.customer) === id
+        );
+        setQuotes(related);
       })
-      .catch(() => setError('Failed to load customer'))
+      .catch(() => setError('Failed to load customer record.'))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -59,129 +72,247 @@ export default function CustomerDetailPage() {
       await api.delete(`/customers/${id}`);
       navigate('/customers');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete customer');
+      alert(err.response?.data?.message || 'Failed to delete customer.');
     }
   }
 
-  if (loading) return <Layout><div className="text-slate-400">Loading…</div></Layout>;
-  if (error || !customer) return <Layout><div className="text-red-600 text-sm">{error || 'Customer not found'}</div></Layout>;
+  if (loading) {
+    return (
+      <Layout>
+        <div className="p-12 text-center text-xs text-slate-400">Loading customer profile…</div>
+      </Layout>
+    );
+  }
+
+  if (error || !customer) {
+    return (
+      <Layout>
+        <PageHeader title="Customer Account" backTo="/customers" backLabel="Back to Customers" />
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700">
+          {error || 'Customer not found.'}
+        </div>
+      </Layout>
+    );
+  }
 
   const billing = formatAddress(customer.billingAddress);
   const shipping = customer.shippingSameAsBilling ? billing : formatAddress(customer.shippingAddress);
 
+  const quoteColumns = [
+    {
+      header: 'Quote ID',
+      key: '_id',
+      render: (q) => (
+        <span className="font-semibold text-slate-900 font-mono text-xs">
+          #{q._id.slice(-6)}
+        </span>
+      )
+    },
+    {
+      header: 'Total Value',
+      key: 'total',
+      align: 'right',
+      render: (q) => (
+        <span className="font-semibold text-slate-900 tabular-nums">
+          ₹{(q.total || 0).toLocaleString('en-IN')}
+        </span>
+      )
+    },
+    {
+      header: 'Discount',
+      key: 'discountAmount',
+      align: 'center',
+      render: (q) => {
+        const pct = q.subtotal > 0 ? Math.round((q.discountAmount / q.subtotal) * 100) : 0;
+        return <span className="tabular-nums font-medium text-slate-700">{pct}%</span>;
+      }
+    },
+    {
+      header: 'Margin',
+      key: 'marginPercent',
+      align: 'center',
+      render: (q) => (
+        <span className="tabular-nums text-slate-700">
+          {q.marginPercent ? `${q.marginPercent.toFixed(1)}%` : '—'}
+        </span>
+      )
+    },
+    {
+      header: 'Risk',
+      key: 'riskBand',
+      align: 'center',
+      render: (q) => <RiskBadge band={q.riskBand} />
+    },
+    {
+      header: 'Stage',
+      key: 'stage',
+      align: 'center',
+      render: (q) => <StatusBadge status={q.stage} size="xs" />
+    }
+  ];
+
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Link to="/customers" className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 mb-1">
-            <ArrowLeft size={13} /> Back to customers
-          </Link>
+      <PageHeader
+        title={customer.name}
+        subtitle="Corporate account profile, contract terms, and historical sales transactions."
+        backTo="/customers"
+        backLabel="Back to Customers"
+        badge={
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-800">{customer.name}</h1>
-            <span className={`badge ${TIER_STYLES[customer.tier] || 'bg-slate-100 text-slate-600'}`}>{customer.tier}</span>
-            <span className={`badge ${customer.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-              {customer.status === 'active' ? 'Active' : 'Inactive'}
-            </span>
+            <StatusBadge status={customer.tier.toLowerCase()} />
+            <StatusBadge status={customer.status} size="xs" />
           </div>
-        </div>
-        <div className="flex gap-2">
-          {canEdit && (
-            <button onClick={() => navigate(`/quotes/new?customer=${customer._id}`)} className="btn btn-secondary flex items-center gap-1.5 text-xs">
-              <FilePlus2 size={14} /> New Quote
-            </button>
-          )}
-          {canEdit && (
-            <button onClick={() => navigate(`/customers/${id}/edit`)} className="btn btn-secondary flex items-center gap-1.5 text-xs">
-              <Pencil size={14} /> Edit
-            </button>
-          )}
-          {canDelete && (
-            <button onClick={removeCustomer} className="btn btn-danger flex items-center gap-1.5 text-xs">
-              <Trash2 size={14} /> Delete
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
-          <div className="card p-6">
-            <h2 className="font-semibold text-slate-800 text-sm mb-4">Contact</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-2 text-slate-600">
-                <Mail size={14} className="text-slate-400" /> {customer.email || '—'}
-              </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <Phone size={14} className="text-slate-400" /> {customer.phone || '—'}
-              </div>
-              <div className="flex items-center gap-2 text-slate-600 col-span-2">
-                <UserIcon size={14} className="text-slate-400" />
-                Assigned rep: {customer.assignedRep?.name || 'Unassigned'}
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <h2 className="font-semibold text-slate-800 text-sm mb-4">Billing & Shipping</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <div className="text-xs font-medium text-slate-500 mb-1">Billing address</div>
-                <div className="text-slate-700">{billing || '—'}</div>
-              </div>
-              <div>
-                <div className="text-xs font-medium text-slate-500 mb-1">
-                  Shipping address {customer.shippingSameAsBilling && <span className="text-slate-400">(same as billing)</span>}
-                </div>
-                <div className="text-slate-700">{shipping || '—'}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <h2 className="font-semibold text-slate-800 text-sm mb-4">Quotes</h2>
-            {quotes.length === 0 ? (
-              <div className="text-sm text-slate-400">No quotes yet for this customer.</div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="text-xs text-slate-400 uppercase">
-                  <tr>
-                    <th className="text-left py-2">Amount</th>
-                    <th className="text-left py-2">Stage</th>
-                    <th className="text-left py-2">Created</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotes.map((q) => (
-                    <tr key={q._id} onClick={() => navigate(`/quotes/${q._id}`)} className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer">
-                      <td className="py-2">₹{q.total?.toLocaleString('en-IN')}</td>
-                      <td className="py-2"><StageBadge stage={q.stage} /></td>
-                      <td className="py-2 text-slate-500">{new Date(q.createdAt).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        }
+        actions={
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <button
+                onClick={() => navigate(`/quotes/new?customer=${customer._id}`)}
+                className="btn btn-primary text-xs flex items-center gap-1.5"
+              >
+                <FilePlus2 size={14} /> New Quote
+              </button>
+            )}
+            {canEdit && (
+              <button
+                onClick={() => navigate(`/customers/${id}/edit`)}
+                className="btn btn-outline text-xs flex items-center gap-1.5"
+              >
+                <Pencil size={13} /> Edit Account
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={removeCustomer}
+                className="btn btn-danger text-xs flex items-center gap-1.5"
+                title="Delete Customer"
+              >
+                <Trash2 size={13} /> Delete
+              </button>
             )}
           </div>
+        }
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Proposals & Quotations History */}
+        <div className="lg:col-span-8 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              Deal Proposals ({quotes.length})
+            </h2>
+            {canEdit && (
+              <Link
+                to={`/quotes/new?customer=${customer._id}`}
+                className="text-xs font-medium text-brand-600 hover:text-brand-700"
+              >
+                + Create new quote for {customer.name}
+              </Link>
+            )}
+          </div>
+
+          <DataTable
+            columns={quoteColumns}
+            data={quotes}
+            loading={false}
+            emptyTitle="No quotes on file"
+            emptyDescription="There are no active or historical proposals for this customer account."
+            emptyAction={
+              canEdit && (
+                <button
+                  onClick={() => navigate(`/quotes/new?customer=${customer._id}`)}
+                  className="btn btn-primary text-xs"
+                >
+                  Create Quotation
+                </button>
+              )
+            }
+            onRowClick={(q) => navigate(`/quotes/${q._id}`)}
+          />
         </div>
 
-        <div className="space-y-6">
-          <div className="card p-6">
-            <h2 className="font-semibold text-slate-800 text-sm mb-3">Tier Governance</h2>
-            <p className="text-xs text-slate-500 mb-3">
-              This customer's <span className="font-medium text-slate-700">{customer.tier}</span> tier is applied automatically to every quote:
-            </p>
-            <ul className="text-xs text-slate-600 space-y-2 list-disc pl-4">
-              <li>
-                <span className="font-medium">Price calculation</span> — tier-specific price list overrides apply where configured.
-              </li>
-              <li>
-                <span className="font-medium">Discount governance</span> — reps can apply up to{' '}
-                <span className="font-semibold">{autonomousDiscount ?? '—'}%</span> autonomously before it's flagged.
-              </li>
-              <li>
-                <span className="font-medium">Approval routing</span> — discounts above that autonomous limit are routed to manager/finance approval.
-              </li>
-            </ul>
+        {/* Right Column: Account Specifications & Addresses */}
+        <div className="lg:col-span-4 space-y-5">
+          {/* Account Details */}
+          <div className="card p-5">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-3">
+              Account Overview
+            </h3>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-slate-500">Autonomous Limit:</span>
+                <span className="font-semibold text-brand-700">
+                  {autonomousDiscount !== undefined ? `${autonomousDiscount}%` : '—'}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-slate-500">Assigned Rep:</span>
+                <span className="font-semibold text-slate-800">
+                  {customer.assignedRep?.name || 'Unassigned'}
+                </span>
+              </div>
+
+              {customer.repHistoricalAvgDiscount > 0 && (
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="text-slate-500">Rep Historical Avg:</span>
+                  <span className="font-semibold text-slate-800 tabular-nums">
+                    {customer.repHistoricalAvgDiscount}%
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-2 pt-1">
+                {customer.email && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Mail size={14} className="text-slate-400 shrink-0" />
+                    <a href={`mailto:${customer.email}`} className="hover:underline truncate">
+                      {customer.email}
+                    </a>
+                  </div>
+                )}
+                {customer.phone && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Phone size={14} className="text-slate-400 shrink-0" />
+                    <span className="font-mono">{customer.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Addresses */}
+          <div className="card p-5">
+            <h3 className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <MapPin size={14} className="text-brand-600" />
+              Locations & Shipping
+            </h3>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide block mb-1">
+                  Billing Address
+                </span>
+                <div className="text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  {billing || <span className="text-slate-400 italic">No billing address specified</span>}
+                </div>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide block mb-1">
+                  Shipping Address
+                </span>
+                <div className="text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                  {customer.shippingSameAsBilling ? (
+                    <span className="text-slate-500 italic">Same as billing address</span>
+                  ) : (
+                    shipping || <span className="text-slate-400 italic">No shipping address specified</span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

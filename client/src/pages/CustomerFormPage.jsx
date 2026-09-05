@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Trash2, Power } from 'lucide-react';
+import { ArrowLeft, Trash2, Power, Save, Building2, MapPin } from 'lucide-react';
 import api from '../services/api';
 import Layout from '../components/Layout';
+import PageHeader from '../components/PageHeader';
+import StatusBadge from '../components/StatusBadge';
 import { useAuth } from '../context/AuthContext';
 
 const TIERS = ['Bronze', 'Silver', 'Gold'];
 const EMPTY_ADDRESS = { street: '', city: '', state: '', postalCode: '', country: '' };
 const EMPTY_FORM = {
-  name: '', email: '', phone: '', tier: 'Bronze', status: 'active', assignedRep: '',
+  name: '',
+  email: '',
+  phone: '',
+  tier: 'Bronze',
+  status: 'active',
+  assignedRep: '',
   billingAddress: { ...EMPTY_ADDRESS },
   shippingAddress: { ...EMPTY_ADDRESS },
   shippingSameAsBilling: true
@@ -32,11 +39,11 @@ export default function CustomerFormPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/customers/meta/sales-reps').then((r) => setReps(r.data)).catch(() => {});
-    // Autonomous discount % per tier — shown inline so whoever sets the tier
-    // sees the discount governance/approval-routing consequence immediately.
+    api.get('/customers/meta/sales-reps').then((r) => setReps(r.data || [])).catch(() => {});
     api.get('/discount-rules/tiers').then((r) => {
-      setTierDiscounts(Object.fromEntries(r.data.map((row) => [row.tier, row.autonomousDiscount])));
+      setTierDiscounts(
+        Object.fromEntries((r.data || []).map((row) => [row.tier, row.autonomousDiscount]))
+      );
     }).catch(() => {});
   }, []);
 
@@ -44,24 +51,27 @@ export default function CustomerFormPage() {
     if (!isEdit) return;
     setLoading(true);
     api.get(`/customers/${id}`)
-      .then((r) => setForm({
-        name: r.data.name,
-        email: r.data.email || '',
-        phone: r.data.phone || '',
-        tier: r.data.tier,
-        status: r.data.status,
-        assignedRep: r.data.assignedRep?._id || r.data.assignedRep || '',
-        billingAddress: addressOrEmpty(r.data.billingAddress),
-        shippingAddress: addressOrEmpty(r.data.shippingAddress),
-        shippingSameAsBilling: r.data.shippingSameAsBilling ?? true
-      }))
-      .catch(() => setError('Failed to load customer'))
+      .then((r) =>
+        setForm({
+          name: r.data.name,
+          email: r.data.email || '',
+          phone: r.data.phone || '',
+          tier: r.data.tier,
+          status: r.data.status,
+          assignedRep: r.data.assignedRep?._id || r.data.assignedRep || '',
+          billingAddress: addressOrEmpty(r.data.billingAddress),
+          shippingAddress: addressOrEmpty(r.data.shippingAddress),
+          shippingSameAsBilling: r.data.shippingSameAsBilling ?? true
+        })
+      )
+      .catch(() => setError('Failed to load customer profile'))
       .finally(() => setLoading(false));
   }, [id, isEdit]);
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
+
   function updateAddress(kind, field, value) {
     setForm((prev) => ({ ...prev, [kind]: { ...prev[kind], [field]: value } }));
   }
@@ -119,111 +129,205 @@ export default function CustomerFormPage() {
     }
   }
 
-  if (loading) return <Layout><div className="text-slate-400">Loading…</div></Layout>;
+  if (loading) {
+    return (
+      <Layout>
+        <div className="p-12 text-center text-xs text-slate-400">Loading customer account…</div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Link to="/customers" className="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 mb-1">
-            <ArrowLeft size={13} /> Back to customers
-          </Link>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-800">{isEdit ? (form.name || 'Customer') : 'New Customer'}</h1>
-            {isEdit && (
-              <span className={`badge ${form.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                {form.status === 'active' ? 'Active' : 'Inactive'}
-              </span>
-            )}
-          </div>
-        </div>
-        {isEdit && (
-          <div className="flex gap-2">
-            <button onClick={toggleStatus} className="btn btn-secondary flex items-center gap-1.5 text-xs">
-              <Power size={14} /> {form.status === 'active' ? 'Deactivate' : 'Activate'}
-            </button>
-            {user?.role === 'ADMIN' && (
-              <button onClick={removeCustomer} className="btn btn-danger flex items-center gap-1.5 text-xs">
-                <Trash2 size={14} /> Delete
+      <PageHeader
+        title={isEdit ? (form.name || 'Edit Customer') : 'Create Customer Account'}
+        subtitle="Manage client corporate identity, governance tier, and geographical delivery endpoints."
+        backTo={isEdit ? `/customers/${id}` : '/customers'}
+        backLabel="Back to Customers"
+        badge={
+          isEdit && (
+            <div className="flex items-center gap-2">
+              <StatusBadge status={form.tier.toLowerCase()} size="xs" />
+              <StatusBadge status={form.status} size="xs" />
+            </div>
+          )
+        }
+        actions={
+          isEdit && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleStatus}
+                className="btn btn-outline text-xs flex items-center gap-1.5"
+              >
+                <Power size={13} />
+                {form.status === 'active' ? 'Deactivate' : 'Activate'}
               </button>
-            )}
-          </div>
-        )}
-      </div>
+              {user?.role === 'ADMIN' && (
+                <button
+                  type="button"
+                  onClick={removeCustomer}
+                  className="btn btn-danger text-xs flex items-center gap-1.5"
+                >
+                  <Trash2 size={13} /> Delete
+                </button>
+              )}
+            </div>
+          )
+        }
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
-        <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-slate-800 text-sm">Profile</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-xs font-medium text-slate-600">Company / Customer Name</label>
-              <input className="input mt-1" value={form.name} onChange={(e) => update('name', e.target.value)} required />
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-3xl">
+        {/* Profile Card */}
+        <div className="card p-5 space-y-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 uppercase tracking-wider">
+            <Building2 size={15} className="text-brand-600" />
+            Corporate Profile
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="sm:col-span-2">
+              <label className="font-semibold text-slate-700 block mb-1">Company / Customer Name *</label>
+              <input
+                className="input text-xs"
+                value={form.name}
+                onChange={(e) => update('name', e.target.value)}
+                placeholder="e.g. Acme Technologies"
+                required
+              />
             </div>
+
             <div>
-              <label className="text-xs font-medium text-slate-600">Email</label>
-              <input type="email" className="input mt-1" value={form.email} onChange={(e) => update('email', e.target.value)} />
+              <label className="font-semibold text-slate-700 block mb-1">Email Address</label>
+              <input
+                type="email"
+                className="input text-xs"
+                value={form.email}
+                onChange={(e) => update('email', e.target.value)}
+                placeholder="procurement@company.com"
+              />
             </div>
+
             <div>
-              <label className="text-xs font-medium text-slate-600">Phone</label>
-              <input className="input mt-1" value={form.phone} onChange={(e) => update('phone', e.target.value)} />
+              <label className="font-semibold text-slate-700 block mb-1">Phone Number</label>
+              <input
+                className="input text-xs"
+                value={form.phone}
+                onChange={(e) => update('phone', e.target.value)}
+                placeholder="+91-9800000000"
+              />
             </div>
+
             <div>
-              <label className="text-xs font-medium text-slate-600">Customer Tier</label>
-              <select className="input mt-1" value={form.tier} onChange={(e) => update('tier', e.target.value)}>
+              <label className="font-semibold text-slate-700 block mb-1">Customer Contract Tier</label>
+              <select
+                className="input text-xs"
+                value={form.tier}
+                onChange={(e) => update('tier', e.target.value)}
+              >
                 {TIERS.map((t) => (
                   <option key={t} value={t}>
-                    {t}{tierDiscounts[t] !== undefined ? ` — ${tierDiscounts[t]}% autonomous discount` : ''}
+                    {t}
+                    {tierDiscounts[t] !== undefined ? ` — ${tierDiscounts[t]}% ceiling` : ''}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-slate-400 mt-1">Drives price calculation, discount governance, and approval routing for this customer's quotes.</p>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Controls autonomous discount limit and risk scoring for this customer's quotes.
+              </p>
             </div>
+
             <div>
-              <label className="text-xs font-medium text-slate-600">Status</label>
-              <select className="input mt-1" value={form.status} onChange={(e) => update('status', e.target.value)}>
+              <label className="font-semibold text-slate-700 block mb-1">Account Status</label>
+              <select
+                className="input text-xs"
+                value={form.status}
+                onChange={(e) => update('status', e.target.value)}
+              >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
-            <div className="col-span-2">
-              <label className="text-xs font-medium text-slate-600">Assigned Sales Representative</label>
-              <select className="input mt-1" value={form.assignedRep} onChange={(e) => update('assignedRep', e.target.value)}>
+
+            <div className="sm:col-span-2">
+              <label className="font-semibold text-slate-700 block mb-1">Assigned Sales Representative</label>
+              <select
+                className="input text-xs"
+                value={form.assignedRep}
+                onChange={(e) => update('assignedRep', e.target.value)}
+              >
                 <option value="">Unassigned</option>
                 {reps.map((r) => (
-                  <option key={r._id} value={r._id}>{r.name} ({r.role.replace('_', ' ')})</option>
+                  <option key={r._id} value={r._id}>
+                    {r.name} ({r.role.replace('_', ' ')})
+                  </option>
                 ))}
               </select>
             </div>
           </div>
         </div>
 
-        <div className="card p-6 space-y-4">
-          <h2 className="font-semibold text-slate-800 text-sm">Billing Information</h2>
-          <AddressFields value={form.billingAddress} onChange={(field, value) => updateAddress('billingAddress', field, value)} />
+        {/* Billing Address Card */}
+        <div className="card p-5 space-y-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 uppercase tracking-wider">
+            <MapPin size={15} className="text-brand-600" />
+            Billing Address
+          </div>
+          <AddressFields
+            value={form.billingAddress}
+            onChange={(field, value) => updateAddress('billingAddress', field, value)}
+          />
         </div>
 
-        <div className="card p-6 space-y-4">
+        {/* Shipping Address Card */}
+        <div className="card p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-slate-800 text-sm">Shipping Information</h2>
-            <label className="flex items-center gap-2 text-xs text-slate-600">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 uppercase tracking-wider">
+              <MapPin size={15} className="text-brand-600" />
+              Shipping Address
+            </div>
+            <label className="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
               <input
                 type="checkbox"
+                className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                 checked={form.shippingSameAsBilling}
                 onChange={(e) => update('shippingSameAsBilling', e.target.checked)}
               />
               Same as billing
             </label>
           </div>
+
           {!form.shippingSameAsBilling && (
-            <AddressFields value={form.shippingAddress} onChange={(field, value) => updateAddress('shippingAddress', field, value)} />
+            <AddressFields
+              value={form.shippingAddress}
+              onChange={(field, value) => updateAddress('shippingAddress', field, value)}
+            />
           )}
         </div>
 
-        {error && <div className="text-red-600 text-sm">{error}</div>}
+        {error && (
+          <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">
+            {error}
+          </div>
+        )}
 
-        <button type="submit" disabled={saving} className="btn btn-primary">
-          {saving ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Customer'}
-        </button>
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn btn-primary text-xs flex items-center gap-1.5"
+          >
+            <Save size={13} />
+            {saving ? 'Saving account…' : isEdit ? 'Save Changes' : 'Create Customer'}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="btn btn-ghost text-xs"
+          >
+            Cancel
+          </button>
+        </div>
       </form>
     </Layout>
   );
@@ -231,26 +335,51 @@ export default function CustomerFormPage() {
 
 function AddressFields({ value, onChange }) {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div className="col-span-2">
-        <label className="text-xs font-medium text-slate-600">Street</label>
-        <input className="input mt-1" value={value.street} onChange={(e) => onChange('street', e.target.value)} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+      <div className="sm:col-span-2">
+        <label className="font-semibold text-slate-700 block mb-1">Street Address</label>
+        <input
+          className="input text-xs"
+          value={value.street || ''}
+          onChange={(e) => onChange('street', e.target.value)}
+          placeholder="e.g. 221 MG Road, Suite 400"
+        />
       </div>
       <div>
-        <label className="text-xs font-medium text-slate-600">City</label>
-        <input className="input mt-1" value={value.city} onChange={(e) => onChange('city', e.target.value)} />
+        <label className="font-semibold text-slate-700 block mb-1">City</label>
+        <input
+          className="input text-xs"
+          value={value.city || ''}
+          onChange={(e) => onChange('city', e.target.value)}
+          placeholder="City"
+        />
       </div>
       <div>
-        <label className="text-xs font-medium text-slate-600">State</label>
-        <input className="input mt-1" value={value.state} onChange={(e) => onChange('state', e.target.value)} />
+        <label className="font-semibold text-slate-700 block mb-1">State / Province</label>
+        <input
+          className="input text-xs"
+          value={value.state || ''}
+          onChange={(e) => onChange('state', e.target.value)}
+          placeholder="State"
+        />
       </div>
       <div>
-        <label className="text-xs font-medium text-slate-600">Postal Code</label>
-        <input className="input mt-1" value={value.postalCode} onChange={(e) => onChange('postalCode', e.target.value)} />
+        <label className="font-semibold text-slate-700 block mb-1">Postal Code</label>
+        <input
+          className="input text-xs"
+          value={value.postalCode || ''}
+          onChange={(e) => onChange('postalCode', e.target.value)}
+          placeholder="Postal Code"
+        />
       </div>
       <div>
-        <label className="text-xs font-medium text-slate-600">Country</label>
-        <input className="input mt-1" value={value.country} onChange={(e) => onChange('country', e.target.value)} />
+        <label className="font-semibold text-slate-700 block mb-1">Country</label>
+        <input
+          className="input text-xs"
+          value={value.country || ''}
+          onChange={(e) => onChange('country', e.target.value)}
+          placeholder="Country"
+        />
       </div>
     </div>
   );
