@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, Package } from 'lucide-react';
+import { LayoutDashboard, FileText, ShieldCheck, Settings, LogOut, Package, Boxes } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LINKS_BY_ROLE = {
@@ -20,6 +20,7 @@ const LINKS_BY_ROLE = {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/quotes', label: 'Quotes', icon: FileText },
     { to: '/approvals', label: 'Approvals', icon: ShieldCheck },
+    { to: '/admin/products', label: 'Products', icon: Boxes },
     { to: '/admin', label: 'Admin Settings', icon: Settings }
   ],
   CUSTOMER: [
