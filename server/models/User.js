@@ -1,12 +1,25 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { ALL_ROLES, ROLES } = require('../config/roles');
 
 const UserSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ['rep', 'manager', 'finance', 'admin', 'customer'], required: true },
-  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' },
+  name: { type: String, required: true, trim: true },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email address']
+  },
+  password: { type: String, required: true, minlength: [8, 'Password must be at least 8 characters'] },
+  role: { type: String, enum: ALL_ROLES, required: true },
+  // Required only for CUSTOMER-role accounts, which must link to an existing Customer record.
+  customer: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Customer',
+    required: function () { return this.role === ROLES.CUSTOMER; }
+  },
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const DEMO_ACCOUNTS = [
@@ -22,7 +22,7 @@ export default function LoginPage() {
     setError('');
     try {
       const user = await login(email, password);
-      navigate(user.role === 'customer' ? '/portal' : '/dashboard');
+      navigate(user.role === 'CUSTOMER' ? '/portal' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }
@@ -63,6 +63,10 @@ export default function LoginPage() {
                 </button>
               ))}
             </div>
+          </div>
+          <div className="mt-4 text-center text-sm text-slate-500">
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-brand-600 font-medium hover:underline">Sign up</Link>
           </div>
         </div>
       </div>

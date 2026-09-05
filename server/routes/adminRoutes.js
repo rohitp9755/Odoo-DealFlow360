@@ -1,8 +1,9 @@
 const router = require('express').Router();
 const ctrl = require('../controllers/adminController');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { ROLES } = require('../config/roles');
 
-router.use(requireAuth, requireRole('admin'));
+router.use(requireAuth, requireRole(ROLES.ADMIN));
 
 router.get('/approval-rules', ctrl.getApprovalRules);
 router.post('/approval-rules', ctrl.createApprovalRule);

@@ -1,5 +1,6 @@
 const Quote = require('../models/Quote');
 const { logAudit } = require('../services/auditService');
+const { ROLES } = require('../config/roles');
 
 // Strips every field a customer must never see: cost, margin, risk, internal
 // approval math. Only price, discount, and totals the customer negotiated remain.
@@ -41,7 +42,7 @@ async function getQuote(req, res, next) {
   try {
     const quote = await Quote.findById(req.params.id).populate('lines.product', 'name category');
     if (!quote) return res.status(404).json({ message: 'Quote not found' });
-    if (req.user.role === 'customer' && String(quote.customer) !== String(req.user.customer)) {
+    if (req.user.role === ROLES.CUSTOMER && String(quote.customer) !== String(req.user.customer)) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     res.json(sanitizeQuote(quote));

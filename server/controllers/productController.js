@@ -1,11 +1,12 @@
 const Product = require('../models/Product');
+const { ROLES } = require('../config/roles');
 
 // Fields safe to expose to a customer-role caller (no cost).
 const CUSTOMER_SAFE_FIELDS = '-cost';
 
 async function list(req, res, next) {
   try {
-    const isCustomer = req.user?.role === 'customer';
+    const isCustomer = req.user?.role === ROLES.CUSTOMER;
     const query = Product.find({ active: true });
     if (isCustomer) query.select(CUSTOMER_SAFE_FIELDS);
     res.json(await query.sort({ category: 1, name: 1 }));
@@ -13,7 +14,7 @@ async function list(req, res, next) {
 }
 async function getOne(req, res, next) {
   try {
-    const isCustomer = req.user?.role === 'customer';
+    const isCustomer = req.user?.role === ROLES.CUSTOMER;
     const query = Product.findById(req.params.id);
     if (isCustomer) query.select(CUSTOMER_SAFE_FIELDS);
     const p = await query;

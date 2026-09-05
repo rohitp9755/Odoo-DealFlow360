@@ -24,7 +24,10 @@ export default function ApprovalDashboard() {
     load();
   }
 
-  const myStepPending = (a) => a.steps.find((s) => s.role === user.role && s.status === 'pending');
+  // Approval.steps.role uses its own vocabulary ('manager' | 'finance' | 'escalation'),
+  // separate from the User role enum — translate at this boundary only.
+  const STEP_ROLE_BY_USER_ROLE = { SALES_MANAGER: 'manager', FINANCE: 'finance' };
+  const myStepPending = (a) => a.steps.find((s) => s.role === STEP_ROLE_BY_USER_ROLE[user.role] && s.status === 'pending');
 
   return (
     <Layout>
