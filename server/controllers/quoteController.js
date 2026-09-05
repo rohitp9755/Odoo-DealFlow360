@@ -2,12 +2,13 @@ const Quote = require('../models/Quote');
 const { computeQuote, round2 } = require('../services/quoteCalculator');
 const { evaluateAndRouteApproval } = require('../services/approvalEngine');
 const { logAudit } = require('../services/auditService');
+const { ROLES } = require('../config/roles');
 
 // Internal (rep/manager/finance/admin) full view.
 async function list(req, res, next) {
   try {
     const filter = {};
-    if (req.user.role === 'rep') filter.rep = req.user._id;
+    if (req.user.role === ROLES.SALES_REP) filter.rep = req.user._id;
     const quotes = await Quote.find(filter).populate('customer', 'name tier').populate('rep', 'name').sort({ createdAt: -1 });
     res.json(quotes);
   } catch (err) { next(err); }

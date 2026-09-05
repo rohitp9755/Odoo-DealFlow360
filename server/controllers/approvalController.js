@@ -1,5 +1,14 @@
 const Approval = require('../models/Approval');
 const { actOnApproval, returnForRevision } = require('../services/approvalEngine');
+const { ROLES } = require('../config/roles');
+
+// Approval.steps.role uses its own vocabulary ('manager' | 'finance' | 'escalation') —
+// a separate concept from the User role enum, unrelated to this auth feature and left
+// untouched. This just translates the caller's user role to that vocabulary at the boundary.
+const USER_ROLE_TO_STEP_ROLE = {
+  [ROLES.SALES_MANAGER]: 'manager',
+  [ROLES.FINANCE]: 'finance'
+};
 
 async function list(req, res, next) {
   try {
@@ -25,14 +34,16 @@ async function getOne(req, res, next) {
 
 async function approve(req, res, next) {
   try {
-    const approval = await actOnApproval(req.params.id, req.user.role, 'approve', req.user, req.body.comment);
+    const stepRole = USER_ROLE_TO_STEP_ROLE[req.user.role] || req.user.role;
+    const approval = await actOnApproval(req.params.id, stepRole, 'approve', req.user, req.body.comment);
     res.json(approval);
   } catch (err) { next(err); }
 }
 
 async function reject(req, res, next) {
   try {
-    const approval = await actOnApproval(req.params.id, req.user.role, 'reject', req.user, req.body.comment);
+    const stepRole = USER_ROLE_TO_STEP_ROLE[req.user.role] || req.user.role;
+    const approval = await actOnApproval(req.params.id, stepRole, 'reject', req.user, req.body.comment);
     res.json(approval);
   } catch (err) { next(err); }
 }

@@ -16,6 +16,7 @@ const Negotiation = require('../models/Negotiation');
 const NegotiationMessage = require('../models/NegotiationMessage');
 
 const { computeQuote } = require('../services/quoteCalculator');
+const { ROLES } = require('../config/roles');
 
 async function run() {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -136,13 +137,13 @@ async function run() {
 
   // --- Users ---
   const users = await User.create([
-    { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: 'rep' },
-    { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: 'manager' },
-    { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: 'finance' },
-    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: 'admin' },
-    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: 'customer', customer: acme._id }
+    { name: 'Riya Rep', email: 'rep@dealflow360.com', password: 'password123', role: ROLES.SALES_REP },
+    { name: 'Manoj Manager', email: 'manager@dealflow360.com', password: 'password123', role: ROLES.SALES_MANAGER },
+    { name: 'Farah Finance', email: 'finance@dealflow360.com', password: 'password123', role: ROLES.FINANCE },
+    { name: 'Aditi Admin', email: 'admin@dealflow360.com', password: 'password123', role: ROLES.ADMIN },
+    { name: 'Acme Buyer', email: 'customer@dealflow360.com', password: 'password123', role: ROLES.CUSTOMER, customer: acme._id }
   ]);
-  const rep = users.find(u => u.role === 'rep');
+  const rep = users.find(u => u.role === ROLES.SALES_REP);
 
   // --- Demo Quote 1: Acme, multi-product, discount ABOVE threshold -> triggers approval ---
   const demoLines1 = [

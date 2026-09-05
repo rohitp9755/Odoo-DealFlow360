@@ -22,7 +22,7 @@ export default function LoginPage() {
     setError('');
     try {
       const user = await login(email, password);
-      navigate(user.role === 'customer' ? '/portal' : '/dashboard');
+      navigate(user.role === 'CUSTOMER' ? '/portal' : '/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }
