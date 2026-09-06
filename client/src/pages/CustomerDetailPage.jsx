@@ -13,6 +13,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 import api from '../services/api';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -65,6 +66,24 @@ export default function CustomerDetailPage() {
     () => (customer ? tierDiscounts[customer.tier] : undefined),
     [customer, tierDiscounts]
   );
+
+  const analyticsData = useMemo(() => {
+    if (!quotes.length) return { revenueTrend: [], pipeline: [] };
+
+    const stages = {};
+    quotes.forEach(q => {
+      stages[q.stage] = (stages[q.stage] || 0) + 1;
+    });
+    const pipeline = Object.entries(stages).map(([k, v]) => ({ name: k.replace(/_/g, ' '), count: v }));
+
+    const confirmed = quotes.filter(q => q.stage === 'confirmed').sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const revenueTrend = confirmed.map(q => ({
+      date: new Date(q.createdAt).toLocaleDateString(),
+      value: q.total
+    }));
+
+    return { pipeline, revenueTrend };
+  }, [quotes]);
 
   async function removeCustomer() {
     if (!window.confirm(`Delete "${customer.name}"? This only works if the customer has no quotes.`)) return;
@@ -198,6 +217,46 @@ export default function CustomerDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Proposals & Quotations History */}
         <div className="lg:col-span-8 space-y-5">
+          {/* Analytics Summary */}
+          {!loading && quotes.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
+              <div className="card p-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Historical Revenue</h3>
+                <div className="h-40">
+                  {analyticsData.revenueTrend.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={analyticsData.revenueTrend}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${(v/1000).toFixed(0)}k`} width={50} />
+                        <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']} />
+                        <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: '#10b981', stroke: '#09090b', strokeWidth: 2 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-slate-400">No confirmed revenue yet</div>
+                  )}
+                </div>
+              </div>
+              <div className="card p-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Deal Pipeline</h3>
+                <div className="h-40 flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={analyticsData.pipeline} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2}>
+                        {analyticsData.pipeline.map((entry, index) => {
+                          const colors = { draft: '#94a3b8', 'pending approval': '#f59e0b', approved: '#10b981', sent: '#3b82f6', 'in negotiation': '#8b5cf6', 'under negotiation': '#8b5cf6', confirmed: '#059669', rejected: '#f43f5e' };
+                          return <Cell key={`cell-${index}`} fill={colors[entry.name.toLowerCase()] || '#cbd5e1'} />;
+                        })}
+                      </Pie>
+                      <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
               Deal Proposals ({quotes.length})

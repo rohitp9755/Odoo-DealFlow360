@@ -79,7 +79,7 @@ const NAV_SECTIONS_BY_ROLE = {
       items: [
         { to: '/admin/products', label: 'Products', icon: Boxes },
         { to: '/admin/price-lists', label: 'Price Lists', icon: Tags },
-        { to: '/admin', label: 'Discount & Rules', icon: Settings }
+        { to: '/admin', label: 'Discount & Rules', icon: Settings, end: true }
       ]
     }
   ],
@@ -105,19 +105,19 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }) {
     .toUpperCase();
 
   const sidebarContent = (
-    <div className="flex flex-col h-full bg-[#0d121f] text-slate-200 border-r border-slate-800/80 w-64 select-none">
+    <div className="flex flex-col h-full bg-slate-900 text-white border-r-2 border-slate-900 w-64 select-none">
       {/* Brand Header */}
-      <div className="px-5 py-4 flex items-center justify-between border-b border-slate-800/60">
+      <div className="px-5 py-4 flex items-center justify-between border-b-2 border-slate-800">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold text-base shadow-sm ring-1 ring-white/10">
+          <div className="w-8 h-8 rounded-none bg-brand-500 border-2 border-slate-900 shadow-brutal flex items-center justify-center text-white font-bold text-base">
             D
           </div>
           <div>
-            <div className="text-sm font-semibold tracking-tight text-white flex items-center gap-1.5">
+            <div className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5 uppercase">
               DealFlow<span className="text-brand-400">360</span>
             </div>
-            <div className="text-[10px] text-slate-400 font-medium tracking-wide">
-              Sales Operations
+            <div className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">
+              Operations
             </div>
           </div>
         </div>
@@ -142,16 +142,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }) {
                 {sec.title}
               </div>
             )}
-            {sec.items.map(({ to, label, icon: Icon }) => (
+            {sec.items.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}
+                end={end}
                 onClick={onCloseMobile}
                 className={({ isActive }) =>
-                  `group flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
+                  `group flex items-center gap-2.5 px-3 py-2 rounded-none text-xs font-bold uppercase tracking-wider transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 border-2 ${
                     isActive
-                      ? 'bg-brand-600/15 text-white font-semibold border border-brand-500/20 shadow-subtle'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      ? 'bg-brand-500 text-white border-slate-900 shadow-brutal'
+                      : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700 hover:bg-slate-800'
                   }`
                 }
               >
@@ -160,12 +161,12 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }) {
                     <Icon
                       size={16}
                       className={`shrink-0 transition-colors ${
-                        isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-300'
+                        isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'
                       }`}
                     />
                     <span className="flex-1 truncate">{label}</span>
                     {isActive && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-400 shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-none bg-white shrink-0 border border-slate-900" />
                     )}
                   </>
                 )}
@@ -176,17 +177,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile }) {
       </nav>
 
       {/* User & Logout Footer */}
-      <div className="px-3 py-3 border-t border-slate-800/80 bg-slate-900/40">
-        <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-800/60 transition-colors">
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700/80 flex items-center justify-center text-xs font-semibold text-slate-200 shrink-0">
+      <div className="px-3 py-3 border-t-2 border-slate-800 bg-slate-900">
+        <div className="flex items-center gap-2.5 p-2 rounded-none hover:bg-slate-800 transition-colors border-2 border-transparent hover:border-slate-700">
+          <div className="w-8 h-8 rounded-none bg-slate-800 border-2 border-slate-900 flex items-center justify-center text-xs font-bold text-white shrink-0">
             {userInitials}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-medium text-slate-200 truncate">
+            <div className="text-xs font-bold text-white truncate">
               {user?.name}
             </div>
-            <div className="text-[10px] text-slate-400 truncate capitalize">
-              {(user?.role || '').replace('_', ' ').toLowerCase()}
+            <div className="text-[10px] text-slate-400 font-bold tracking-widest truncate uppercase">
+              {(user?.role || '').replace('_', ' ')}
             </div>
           </div>
           <button

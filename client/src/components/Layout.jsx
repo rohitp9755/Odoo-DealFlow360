@@ -9,7 +9,7 @@ export default function Layout({ children }) {
   const { user } = useAuth();
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] text-slate-900 font-sans antialiased">
+    <div className="flex min-h-screen bg-surface-subtle text-slate-900 font-sans antialiased">
       {/* Sidebar with mobile drawer capability */}
       <Sidebar
         mobileOpen={mobileMenuOpen}
@@ -18,7 +18,7 @@ export default function Layout({ children }) {
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Navbar */}
-        <header className="sticky top-0 z-20 h-14 bg-white/95 backdrop-blur-xs border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+        <header className="sticky top-0 z-20 h-14 bg-white border-b-2 border-slate-900 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -27,22 +27,22 @@ export default function Layout({ children }) {
             >
               <Menu size={20} />
             </button>
-            <div className="text-xs font-medium text-slate-400 hidden sm:block">
-              DealFlow360 · B2B Sales Operations Platform
+            <div className="text-xs font-bold uppercase tracking-widest text-slate-900 hidden sm:block">
+              DealFlow360 · Operations
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <NotificationsPanel />
 
-            <div className="h-4 w-px bg-slate-200" />
+            <div className="h-6 w-0.5 bg-slate-900" />
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-600 hidden sm:inline-block">
+              <span className="text-xs font-bold text-slate-900 hidden sm:inline-block">
                 {user?.name}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200/80 capitalize">
-                {(user?.role || '').replace('_', ' ').toLowerCase()}
+              <span className="px-2 py-0.5 rounded-none text-[10px] font-bold bg-brand-500 text-white border-2 border-slate-900 uppercase tracking-widest">
+                {(user?.role || '').replace('_', ' ')}
               </span>
             </div>
           </div>

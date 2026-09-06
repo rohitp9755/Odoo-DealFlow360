@@ -10,6 +10,7 @@ import StatusBadge from '../components/StatusBadge';
 export default function NewQuotePage() {
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [priceLists, setPriceLists] = useState([]);
   const [customerId, setCustomerId] = useState('');
   const [lines, setLines] = useState([{ product: '', quantity: 1, lineDiscount: 0 }]);
   const [error, setError] = useState('');
@@ -34,10 +35,29 @@ export default function NewQuotePage() {
     [customers, customerId]
   );
 
+  useEffect(() => {
+    if (selectedCustomer) {
+      api.get(`/price-lists?tier=${selectedCustomer.tier}&status=active`)
+        .then(res => setPriceLists(res.data))
+        .catch(() => setPriceLists([]));
+    } else {
+      setPriceLists([]);
+    }
+  }, [selectedCustomer]);
+
   const productMap = useMemo(
     () => new Map(products.map((p) => [p._id, p])),
     [products]
   );
+
+  const priceListMap = useMemo(() => {
+    const map = new Map();
+    for (const pl of priceLists) {
+      const prodId = typeof pl.product === 'object' ? pl.product._id : pl.product;
+      map.set(prodId, pl.price);
+    }
+    return map;
+  }, [priceLists]);
 
   function updateLine(i, field, value) {
     setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, [field]: value } : l)));
@@ -62,9 +82,10 @@ export default function NewQuotePage() {
     for (const l of lines) {
       const p = productMap.get(l.product);
       if (!p) continue;
+      const unitPrice = priceListMap.has(p._id) ? priceListMap.get(p._id) : p.price;
       const qty = Math.max(1, Number(l.quantity) || 1);
       const disc = Math.min(100, Math.max(0, Number(l.lineDiscount) || 0));
-      const lineSubtotal = p.price * qty;
+      const lineSubtotal = unitPrice * qty;
       const lineDiscAmount = lineSubtotal * (disc / 100);
       subtotal += lineSubtotal;
       discount += lineDiscAmount;
@@ -74,7 +95,7 @@ export default function NewQuotePage() {
       discount,
       total: subtotal - discount
     };
-  }, [lines, productMap]);
+  }, [lines, productMap, priceListMap]);
 
   async function createQuote() {
     setError('');
@@ -163,8 +184,9 @@ export default function NewQuotePage() {
             <div className="space-y-2.5">
               {lines.map((line, i) => {
                 const prod = productMap.get(line.product);
+                const unitPrice = prod ? (priceListMap.has(prod._id) ? priceListMap.get(prod._id) : prod.price) : 0;
                 const lineTotal = prod
-                  ? prod.price * (Number(line.quantity) || 1) * (1 - (Number(line.lineDiscount) || 0) / 100)
+                  ? unitPrice * (Number(line.quantity) || 1) * (1 - (Number(line.lineDiscount) || 0) / 100)
                   : 0;
 
                 return (
@@ -180,11 +202,14 @@ export default function NewQuotePage() {
                         onChange={(e) => updateLine(i, 'product', e.target.value)}
                       >
                         <option value="">Select product from catalog…</option>
-                        {products.map((p) => (
-                          <option key={p._id} value={p._id}>
-                            {p.name} — ₹{p.price.toLocaleString('en-IN')} ({p.category})
-                          </option>
-                        ))}
+                        {products.map((p) => {
+                          const pPrice = priceListMap.has(p._id) ? priceListMap.get(p._id) : p.price;
+                          return (
+                            <option key={p._id} value={p._id}>
+                              {p.name} — ₹{pPrice.toLocaleString('en-IN')} ({p.category})
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
 

@@ -15,6 +15,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import api from '../services/api';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -43,6 +44,15 @@ export default function QuoteDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const analyticsData = React.useMemo(() => {
+    if (!quote) return { totalValueData: [] };
+    const totalValueData = quote.lines.map(l => ({
+      name: l.product?.name || l.product || 'Unknown',
+      value: l.total || 0
+    })).filter(d => d.value > 0);
+    return { totalValueData };
+  }, [quote]);
 
   useEffect(() => {
     api.get(`/recommendations/${id}`).then((res) => setRecs(res.data)).catch(() => {});
@@ -247,6 +257,26 @@ export default function QuoteDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Line Items + AI Assistants */}
         <div className="lg:col-span-8 space-y-6">
+          {/* Analytics Summary */}
+          {quote.lines.length > 0 && (
+            <div className="card p-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Line Item Revenue Contribution</h3>
+              <div className="h-40 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={analyticsData.totalValueData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={60} paddingAngle={2}>
+                      {analyticsData.totalValueData.map((entry, index) => {
+                        const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#06b6d4', '#84cc16'];
+                        return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                      })}
+                    </Pie>
+                    <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
           {/* Products Table Card */}
           <div className="card overflow-hidden">
             <div className="px-5 py-3.5 border-b border-slate-200/80 bg-slate-50/50 flex items-center justify-between">

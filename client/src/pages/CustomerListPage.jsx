@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Search, Users, UserPlus } from 'lucide-react';
 import api from '../services/api';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -61,6 +62,26 @@ export default function CustomerListPage() {
       return true;
     });
   }, [customers, search, tierFilter, statusFilter]);
+
+  const analyticsData = useMemo(() => {
+    if (!filtered.length) return { tierData: [], statusData: [] };
+    
+    const tiers = {};
+    const statuses = {};
+    
+    filtered.forEach(c => {
+      const t = c.tier || 'Unassigned';
+      tiers[t] = (tiers[t] || 0) + 1;
+      
+      const s = c.status || 'inactive';
+      statuses[s] = (statuses[s] || 0) + 1;
+    });
+
+    const tierData = Object.entries(tiers).map(([k, v]) => ({ name: k, count: v }));
+    const statusData = Object.entries(statuses).map(([k, v]) => ({ name: k, count: v }));
+
+    return { tierData, statusData };
+  }, [filtered]);
 
   async function remove(c) {
     if (!window.confirm(`Delete "${c.name}"? This only works if the customer has no quotes.`)) return;
@@ -164,6 +185,47 @@ export default function CustomerListPage() {
           )
         }
       />
+
+      {/* Analytics Summary */}
+      {!loading && filtered.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="card p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Tier Distribution</h3>
+            <div className="h-32 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={analyticsData.tierData} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={35} outerRadius={50} paddingAngle={2}>
+                    {analyticsData.tierData.map((entry, index) => {
+                      const colors = { Bronze: '#cd7f32', Silver: '#94a3b8', Gold: '#fbbf24', Unassigned: '#cbd5e1' };
+                      return <Cell key={`cell-${index}`} fill={colors[entry.name] || '#cbd5e1'} />;
+                    })}
+                  </Pie>
+                  <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          <div className="card p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Status Breakdown</h3>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analyticsData.statusData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} width={60} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                    {analyticsData.statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.name === 'active' ? '#10b981' : '#f43f5e'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">

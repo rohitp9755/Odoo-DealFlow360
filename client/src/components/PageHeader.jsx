@@ -12,11 +12,11 @@ export default function PageHeader({
   badge
 }) {
   return (
-    <div className="mb-6 pb-4 border-b border-slate-200/80">
+    <div className="mb-6 pb-4 border-b-2 border-slate-900">
       {backTo && (
         <Link
           to={backTo}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors mb-2 group"
+          className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-600 hover:text-slate-900 transition-colors mb-2 group"
         >
           <ArrowLeft size={13} className="transition-transform group-hover:-translate-x-0.5" />
           {backLabel || 'Back'}
@@ -24,7 +24,7 @@ export default function PageHeader({
       )}
 
       {breadcrumb && !backTo && (
-        <div className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1">
+        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
           {breadcrumb}
         </div>
       )}
@@ -32,13 +32,13 @@ export default function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight uppercase text-slate-900">
               {title}
             </h1>
             {badge && <div>{badge}</div>}
           </div>
           {subtitle && (
-            <p className="text-sm text-slate-500 mt-1 max-w-2xl">
+            <p className="text-sm font-medium text-slate-600 mt-1 max-w-2xl">
               {subtitle}
             </p>
           )}

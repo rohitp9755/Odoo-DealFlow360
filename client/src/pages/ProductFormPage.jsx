@@ -6,6 +6,7 @@ import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import ProductVariantManager from '../components/ProductVariantManager';
+import PriceListManager from '../components/PriceListManager';
 
 const EMPTY_FORM = {
   name: '',
@@ -279,6 +280,9 @@ export default function ProductFormPage() {
 
         {/* Product Variant Manager */}
         {isEdit && <ProductVariantManager productId={id} />}
+
+        {/* Price List Manager */}
+        {isEdit && <PriceListManager productId={id} />}
 
         {error && (
           <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700">

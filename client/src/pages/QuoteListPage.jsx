@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, RefreshCw, Layers } from 'lucide-react';
 import api from '../services/api';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -63,6 +64,23 @@ export default function QuoteListPage() {
       return true;
     });
   }, [quotes, search, stageFilter, riskFilter]);
+
+  const analyticsData = useMemo(() => {
+    if (!filteredQuotes.length) return { pipeline: [], riskData: [] };
+    
+    const stages = {};
+    const risk = {};
+    
+    filteredQuotes.forEach(q => {
+      stages[q.stage] = (stages[q.stage] || 0) + 1;
+      risk[q.riskBand || 'UNKNOWN'] = (risk[q.riskBand || 'UNKNOWN'] || 0) + 1;
+    });
+
+    const pipeline = Object.entries(stages).map(([k, v]) => ({ name: k.replace(/_/g, ' '), count: v }));
+    const riskData = Object.entries(risk).map(([k, v]) => ({ name: k, count: v }));
+
+    return { pipeline, riskData };
+  }, [filteredQuotes]);
 
   const columns = [
     {
@@ -147,6 +165,43 @@ export default function QuoteListPage() {
           </button>
         }
       />
+
+      {/* Analytics Summary */}
+      {!loading && filteredQuotes.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="card p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Pipeline Volume</h3>
+            <div className="h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={analyticsData.pipeline} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                  <Bar dataKey="count" fill="#3b5fdf" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          
+          <div className="card p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Risk Distribution</h3>
+            <div className="h-32 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={analyticsData.riskData} dataKey="count" nameKey="name" cx="50%" cy="50%" innerRadius={35} outerRadius={50} paddingAngle={2}>
+                    {analyticsData.riskData.map((entry, index) => {
+                      const colors = { LOW: '#10b981', MEDIUM: '#f59e0b', HIGH: '#f43f5e', VERY_HIGH: '#9f1239', UNKNOWN: '#cbd5e1' };
+                      return <Cell key={`cell-${index}`} fill={colors[entry.name] || '#cbd5e1'} />;
+                    })}
+                  </Pie>
+                  <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filter Toolbar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">

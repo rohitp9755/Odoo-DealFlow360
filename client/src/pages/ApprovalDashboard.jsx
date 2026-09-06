@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, RotateCcw, ShieldCheck, AlertTriangle, MessageSquare, ArrowRight, UserCheck } from 'lucide-react';
 import api from '../services/api';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import RiskBadge from '../components/RiskBadge';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import { useAuth } from '../context/AuthContext';
+import { useMemo } from 'react';
 
 export default function ApprovalDashboard() {
   const [approvals, setApprovals] = useState([]);
@@ -61,6 +63,16 @@ export default function ApprovalDashboard() {
   const myStepPending = (a) =>
     a?.steps?.find((s) => s.role === userStepRole && s.status === 'pending');
 
+  const analyticsData = useMemo(() => {
+    if (!approvals.length) return { statusData: [] };
+    const statuses = {};
+    approvals.forEach(a => {
+      statuses[a.status] = (statuses[a.status] || 0) + 1;
+    });
+    const statusData = Object.entries(statuses).map(([k, v]) => ({ name: k, count: v }));
+    return { statusData };
+  }, [approvals]);
+
   return (
     <Layout>
       <PageHeader
@@ -68,6 +80,29 @@ export default function ApprovalDashboard() {
         subtitle="Review discount exception requests, audit trail reasoning, and multi-tier escalation chains."
         breadcrumb="Governance"
       />
+
+      {/* Analytics Summary */}
+      {!loading && approvals.length > 0 && (
+        <div className="card p-4 mb-6">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 mb-3">Approval Status Distribution</h3>
+          <div className="h-32">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analyticsData.statusData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 10, fill: '#64748b', textTransform: 'capitalize' }} axisLine={false} tickLine={false} width={80} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                  {analyticsData.statusData.map((entry, index) => {
+                    const colors = { pending: '#f59e0b', approved: '#10b981', rejected: '#f43f5e', returned: '#8b5cf6' };
+                    return <Cell key={`cell-${index}`} fill={colors[entry.name] || '#cbd5e1'} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Approvals Table List */}

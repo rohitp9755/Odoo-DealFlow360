@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, Power } from 'lucide-react';
 import api from '../services/api';
 import Modal from '../components/Modal';
+import Layout from '../components/Layout';
 
 const TIERS = ['Bronze', 'Silver', 'Gold'];
 const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'];

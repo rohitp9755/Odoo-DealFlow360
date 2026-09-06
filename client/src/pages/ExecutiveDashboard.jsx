@@ -26,11 +26,14 @@ import {
   RotateCcw
 } from 'lucide-react';
 import api from '../services/api';
+import { useSocket } from '../context/SocketContext';
 import Layout from '../components/Layout';
 import PageHeader from '../components/PageHeader';
 import KpiCard from '../components/KpiCard';
 import ErrorState from '../components/ErrorState';
 import EmptyState from '../components/EmptyState';
+import RealtimeConnectionStatus from '../components/RealtimeConnectionStatus';
+import LiveActivityFeed from '../components/LiveActivityFeed';
 
 const HEALTH_COLORS = {
   Healthy: '#10b981',
@@ -44,9 +47,9 @@ const DEFAULT_HEALTH_COLORS = ['#10b981', '#0284c7', '#f59e0b', '#ef4444'];
 function CustomTooltip({ active, payload, label, prefix = '', suffix = '' }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-900 text-white text-xs px-3 py-2 rounded-lg shadow-popover border border-slate-800">
-        <div className="font-semibold text-slate-300 mb-0.5">{label}</div>
-        <div className="text-white font-bold">
+      <div className="bg-white text-slate-900 text-xs px-3 py-2 rounded-none border-2 border-slate-900 shadow-brutal">
+        <div className="font-bold uppercase tracking-wider text-slate-500 mb-0.5">{label}</div>
+        <div className="text-slate-900 font-black">
           {prefix}
           {typeof payload[0].value === 'number'
             ? payload[0].value.toLocaleString('en-IN')
@@ -62,9 +65,11 @@ function CustomTooltip({ active, payload, label, prefix = '', suffix = '' }) {
 export default function ExecutiveDashboard() {
   const [summary, setSummary] = useState(null);
   const [analytics, setAnalytics] = useState(null);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { socket } = useSocket();
 
   async function loadData() {
     setLoading(true);
@@ -86,6 +91,62 @@ export default function ExecutiveDashboard() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    
+    let debounceTimer;
+    
+    const handleEvent = (payload) => {
+      const { event, timestamp, data } = payload;
+      
+      let title = 'System Event';
+      let description = '';
+      
+      if (event === 'quotation.created') {
+        title = 'New quotation created';
+        description = `${data.customer?.name || 'Customer'} · ₹${(data.total || 0).toLocaleString('en-IN')}`;
+      } else if (event === 'quotation.approved') {
+        title = 'Quotation approved';
+      } else if (event === 'quotation.submitted') {
+        title = 'Quotation submitted for approval';
+      } else if (event === 'negotiation.created') {
+        title = 'Customer negotiation';
+        description = 'Customer requested a change';
+      } else if (event === 'payment.received') {
+        title = 'Payment received';
+        description = `₹${(data.amount || 0).toLocaleString('en-IN')}`;
+      } else if (event === 'dealHealth.statusChanged') {
+        title = `Health alert: ${data.status}`;
+      } else if (event === 'fulfillment.created') {
+        title = 'Warehouse allocation completed';
+      } else if (event === 'invoice.created') {
+        title = 'Invoice generated';
+      }
+      
+      setActivities(prev => [{ id: Math.random().toString(), timestamp, title, description, event }, ...prev].slice(0, 30));
+      
+      if (event === 'quotation.created') {
+        setSummary(prev => prev ? { ...prev, totalDeals: (prev.totalDeals || 0) + 1, activeDeals: (prev.activeDeals || 0) + 1 } : prev);
+      } else if (event === 'quotation.submitted') {
+        setSummary(prev => prev ? { ...prev, pendingApprovals: (prev.pendingApprovals || 0) + 1 } : prev);
+      } else if (event === 'approval.approved' || event === 'approval.rejected') {
+        setSummary(prev => prev ? { ...prev, pendingApprovals: Math.max(0, (prev.pendingApprovals || 0) - 1) } : prev);
+      }
+      
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        api.get('/dashboard/summary').then(res => setSummary(res.data)).catch(console.error);
+        api.get('/dashboard/analytics').then(res => setAnalytics(res.data)).catch(console.error);
+      }, 1500);
+    };
+
+    socket.on('realtime_event', handleEvent);
+    return () => {
+      socket.off('realtime_event', handleEvent);
+      clearTimeout(debounceTimer);
+    };
+  }, [socket]);
 
   if (error) {
     return (
@@ -111,7 +172,8 @@ export default function ExecutiveDashboard() {
         subtitle="Operational command center: pipeline velocity, risk governance, and revenue integrity."
         breadcrumb="Operations"
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <RealtimeConnectionStatus />
             <button
               onClick={loadData}
               disabled={loading}
@@ -191,8 +253,8 @@ export default function ExecutiveDashboard() {
         <div className="lg:col-span-8 card p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Revenue Velocity</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Revenue Velocity</h2>
+              <p className="text-[10px] font-bold tracking-widest text-slate-500 mt-1 uppercase">
                 Daily confirmed deal volume over time
               </p>
             </div>
@@ -226,10 +288,10 @@ export default function ExecutiveDashboard() {
                   <Line
                     type="monotone"
                     dataKey="total"
-                    stroke="#1e3fd1"
-                    strokeWidth={2.5}
-                    dot={{ r: 3, fill: '#1e3fd1', strokeWidth: 0 }}
-                    activeDot={{ r: 5 }}
+                    stroke="#3b5fdf"
+                    strokeWidth={3}
+                    dot={{ r: 0 }}
+                    activeDot={{ r: 5, fill: '#3b5fdf', stroke: '#09090b', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -240,8 +302,8 @@ export default function ExecutiveDashboard() {
         {/* Deal Health Distribution */}
         <div className="lg:col-span-4 card p-5 flex flex-col justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Deal Health Status</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Deal Health Status</h2>
+            <p className="text-[10px] font-bold tracking-widest text-slate-500 mt-1 uppercase">
               Automated anomaly scoring across active deals
             </p>
           </div>
@@ -300,13 +362,19 @@ export default function ExecutiveDashboard() {
       </div>
 
       {/* Secondary Analytics Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+        
+        {/* Live Activity Feed */}
+        <div className="xl:col-span-1">
+          <LiveActivityFeed activities={activities} />
+        </div>
+
         {/* Deal Pipeline by Stage */}
-        <div className="card p-5">
+        <div className="card p-5 xl:col-span-1">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Pipeline by Stage</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Pipeline by Stage</h2>
+              <p className="text-[10px] font-bold tracking-widest text-slate-500 mt-1 uppercase">
                 Number of deals currently in each lifecycle phase
               </p>
             </div>
@@ -342,7 +410,7 @@ export default function ExecutiveDashboard() {
                       />
                     }
                   />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="count" fill="#3b5fdf" radius={[0, 0, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -350,11 +418,11 @@ export default function ExecutiveDashboard() {
         </div>
 
         {/* Margin Trend */}
-        <div className="card p-5">
+        <div className="card p-5 xl:col-span-1">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Margin Integrity Trend</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">Margin Integrity Trend</h2>
+              <p className="text-[10px] font-bold tracking-widest text-slate-500 mt-1 uppercase">
                 Average deal margin (%) realized on confirmed transactions
               </p>
             </div>
@@ -393,9 +461,9 @@ export default function ExecutiveDashboard() {
                     type="monotone"
                     dataKey="avgMargin"
                     stroke="#10b981"
-                    strokeWidth={2.5}
-                    dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
-                    activeDot={{ r: 5 }}
+                    strokeWidth={3}
+                    dot={{ r: 0 }}
+                    activeDot={{ r: 5, fill: '#10b981', stroke: '#09090b', strokeWidth: 2 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

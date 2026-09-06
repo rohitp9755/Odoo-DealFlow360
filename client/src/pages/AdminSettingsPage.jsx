@@ -1,8 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import Tabs from '../components/Tabs';
+import SubscriptionPlanManager from '../components/SubscriptionPlanManager';
+import UpsellRuleManager from '../components/UpsellRuleManager';
+import WarehouseManager from '../components/WarehouseManager';
+import InventoryManager from '../components/InventoryManager';
+import PriceListManager from '../components/PriceListManager';
+import api from '../services/api';
 
-const TABS = ['Discount Tiers', 'Category Ceilings', 'Approval Rules', 'Warehouses'];
+const TABS = ['Discount Tiers', 'Category Ceilings', 'Approval Rules', 'Price Lists', 'Warehouses', 'Inventory', 'Subscriptions', 'Recommendations'];
 
 export default function AdminSettingsPage() {
   const [tab, setTab] = useState(TABS[0]);
@@ -13,7 +19,11 @@ export default function AdminSettingsPage() {
       {tab === 'Discount Tiers' && <DiscountTiersTab />}
       {tab === 'Category Ceilings' && <CategoryCeilingsTab />}
       {tab === 'Approval Rules' && <ApprovalRulesTab />}
-      {tab === 'Warehouses' && <WarehousesTab />}
+      {tab === 'Price Lists' && <PriceListManager />}
+      {tab === 'Warehouses' && <WarehouseManager />}
+      {tab === 'Inventory' && <InventoryManager />}
+      {tab === 'Subscriptions' && <SubscriptionPlanManager />}
+      {tab === 'Recommendations' && <UpsellRuleManager />}
     </Layout>
   );
 }
@@ -85,23 +95,3 @@ function ApprovalRulesTab() {
   );
 }
 
-function WarehousesTab() {
-  const [rows, setRows] = useState([]);
-  useEffect(() => { api.get('/admin/warehouses').then((r) => setRows(r.data)); }, []);
-  return (
-    <div className="card p-4 max-w-2xl">
-      <table className="w-full text-sm">
-        <thead className="text-xs text-slate-400 uppercase">
-          <tr><th className="text-left py-2">Name</th><th className="text-left py-2">Location</th><th className="text-left py-2">Shipping/unit</th></tr>
-        </thead>
-        <tbody>
-          {rows.map((w) => (
-            <tr key={w._id} className="border-t border-slate-100">
-              <td className="py-2">{w.name}</td><td className="py-2">{w.location}</td><td className="py-2">₹{w.shippingCostPerUnit}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}

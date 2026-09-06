@@ -17,10 +17,10 @@ export default function KpiCard({
   }[variant];
 
   const iconStyles = {
-    default: 'bg-slate-100 text-slate-600',
-    warning: 'bg-amber-50 text-amber-600 border border-amber-200/50',
-    danger: 'bg-rose-50 text-rose-600 border border-rose-200/50',
-    success: 'bg-emerald-50 text-emerald-600 border border-emerald-200/50'
+    default: 'bg-slate-900 text-white',
+    warning: 'bg-amber-500 text-slate-900',
+    danger: 'bg-rose-500 text-white',
+    success: 'bg-emerald-500 text-white'
   }[variant];
 
   if (loading) {
@@ -41,27 +41,27 @@ export default function KpiCard({
   return (
     <div
       onClick={onClick}
-      className={`card p-4 transition-all duration-150 ${
+      className={`card p-4 transition-all duration-200 ${
         isClickable
-          ? 'cursor-pointer hover:border-slate-300 hover:shadow-subtle active:bg-slate-50/50'
+          ? 'cursor-pointer hover:bg-slate-50'
           : ''
       }`}
     >
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-xs font-medium text-slate-500 tracking-wide uppercase">
+        <span className="text-[10px] font-bold text-slate-500 tracking-widest uppercase">
           {label}
         </span>
         {Icon && (
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconStyles}`}>
-            <Icon size={15} />
+          <div className={`w-8 h-8 rounded-none border-2 border-slate-900 flex items-center justify-center shrink-0 ${iconStyles}`}>
+            <Icon size={16} strokeWidth={2.5} />
           </div>
         )}
       </div>
-      <div className={`text-2xl font-bold tracking-tight mb-1 ${variantStyles}`}>
+      <div className={`text-2xl font-black tracking-tighter mb-1 ${variantStyles}`}>
         {value}
       </div>
       {context && (
-        <div className="text-xs text-slate-500 font-normal">
+        <div className="text-[11px] text-slate-600 font-bold uppercase tracking-wide">
           {context}
         </div>
       )}
