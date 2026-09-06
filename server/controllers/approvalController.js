@@ -1,6 +1,7 @@
 const Approval = require('../models/Approval');
 const { actOnApproval, returnForRevision } = require('../services/approvalEngine');
 const { ROLES } = require('../config/roles');
+const eventBus = require('../events/eventBus');
 
 // Approval.steps.role uses its own vocabulary ('manager' | 'finance' | 'escalation') —
 // a separate concept from the User role enum, unrelated to this auth feature and left
@@ -36,6 +37,12 @@ async function approve(req, res, next) {
   try {
     const stepRole = USER_ROLE_TO_STEP_ROLE[req.user.role] || req.user.role;
     const approval = await actOnApproval(req.params.id, stepRole, 'approve', req.user, req.body.comment);
+    
+    eventBus.broadcast('approval.approved', approval, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [approval.requestedBy]
+    });
+
     res.json(approval);
   } catch (err) { next(err); }
 }
@@ -44,6 +51,12 @@ async function reject(req, res, next) {
   try {
     const stepRole = USER_ROLE_TO_STEP_ROLE[req.user.role] || req.user.role;
     const approval = await actOnApproval(req.params.id, stepRole, 'reject', req.user, req.body.comment);
+    
+    eventBus.broadcast('approval.rejected', approval, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [approval.requestedBy]
+    });
+
     res.json(approval);
   } catch (err) { next(err); }
 }
@@ -51,6 +64,12 @@ async function reject(req, res, next) {
 async function returnStep(req, res, next) {
   try {
     const approval = await returnForRevision(req.params.id, req.user, req.body.comment);
+    
+    eventBus.broadcast('approval.returned', approval, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [approval.requestedBy]
+    });
+
     res.json(approval);
   } catch (err) { next(err); }
 }

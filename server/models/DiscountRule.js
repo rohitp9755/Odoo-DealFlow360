@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const DiscountRuleSchema = new mongoose.Schema({
-  category: { type: String, enum: ['Hardware', 'Software', 'Services'], required: true, unique: true },
+  category: { type: String, enum: ['Hardware', 'Software', 'Services', 'Subscription'], required: true, unique: true },
   ceilingDiscount: { type: Number, required: true }
 }, { timestamps: true });
 

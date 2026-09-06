@@ -1,5 +1,7 @@
 const Invoice = require('../models/Invoice');
 const { recordPayment, listForInvoice } = require('../services/paymentService');
+const { ROLES } = require('../config/roles');
+const eventBus = require('../events/eventBus');
 
 async function record(req, res, next) {
   try {
@@ -13,6 +15,12 @@ async function record(req, res, next) {
       transactionRef,
       recordedBy: req.user
     });
+
+    if (!result.idempotent) {
+      eventBus.broadcast('payment.received', result, {
+        roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN]
+      });
+    }
 
     res.status(result.idempotent ? 200 : 201).json(result);
   } catch (err) { next(err); }

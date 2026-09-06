@@ -1,5 +1,6 @@
 const Customer = require('../models/Customer');
 const Product = require('../models/Product');
+const PriceList = require('../models/PriceList');
 const { getAllowedLineDiscount } = require('./discountEngine');
 const { calculateRisk } = require('./riskEngine');
 
@@ -17,6 +18,13 @@ async function computeQuote({ customerId, orderDiscount = 0, lines }) {
   const productIds = lines.map(l => l.product);
   const products = await Product.find({ _id: { $in: productIds } });
   const productMap = new Map(products.map(p => [String(p._id), p]));
+
+  const priceLists = await PriceList.find({
+    product: { $in: productIds },
+    tier: customer.tier,
+    active: true
+  });
+  const priceListMap = new Map(priceLists.map(pl => [String(pl.product), pl]));
 
   let subtotal = 0, discountAmount = 0, total = 0, totalCost = 0;
   let oneTimeTotal = 0, recurringTotal = 0, recurringCycle = null;
@@ -36,7 +44,11 @@ async function computeQuote({ customerId, orderDiscount = 0, lines }) {
     const { categoryCeiling, allowed } = await getAllowedLineDiscount(customer.tier, product.category);
     const violation = Math.max(0, requestedDiscount - allowed);
 
-    const lineSubtotal = product.price * quantity;
+    const unitPrice = priceListMap.has(String(rawLine.product))
+      ? priceListMap.get(String(rawLine.product)).price
+      : product.price;
+
+    const lineSubtotal = unitPrice * quantity;
     const lineDiscountAmount = lineSubtotal * (requestedDiscount / 100);
     const lineTotal = lineSubtotal - lineDiscountAmount;
     const lineCost = product.cost * quantity;
@@ -58,7 +70,7 @@ async function computeQuote({ customerId, orderDiscount = 0, lines }) {
     computedLines.push({
       product: product._id,
       quantity,
-      unitPrice: product.price,
+      unitPrice: unitPrice,
       unitCost: product.cost,
       lineDiscount: requestedDiscount,
       allowedDiscount: allowed,

@@ -104,6 +104,12 @@ async function getSubscriptionPlans(req, res, next) {
 async function createSubscriptionPlan(req, res, next) {
   try { res.status(201).json(await SubscriptionPlan.create(req.body)); } catch (err) { next(err); }
 }
+async function updateSubscriptionPlan(req, res, next) {
+  try { res.json(await SubscriptionPlan.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { next(err); }
+}
+async function deleteSubscriptionPlan(req, res, next) {
+  try { await SubscriptionPlan.findByIdAndDelete(req.params.id); res.status(204).end(); } catch (err) { next(err); }
+}
 
 async function getUpsellRules(req, res, next) {
   try { res.json(await UpsellRule.find().populate('baseProduct recommendedProduct')); } catch (err) { next(err); }
@@ -111,12 +117,18 @@ async function getUpsellRules(req, res, next) {
 async function createUpsellRule(req, res, next) {
   try { res.status(201).json(await UpsellRule.create(req.body)); } catch (err) { next(err); }
 }
+async function updateUpsellRule(req, res, next) {
+  try { res.json(await UpsellRule.findByIdAndUpdate(req.params.id, req.body, { new: true })); } catch (err) { next(err); }
+}
+async function deleteUpsellRule(req, res, next) {
+  try { await UpsellRule.findByIdAndDelete(req.params.id); res.status(204).end(); } catch (err) { next(err); }
+}
 
 module.exports = {
   getDiscountTiers, upsertDiscountTier,
   getDiscountRules, upsertDiscountRule,
   getApprovalRules, createApprovalRule, updateApprovalRule,
   getWarehouses, createWarehouse, updateWarehouse, setStock, getStock,
-  getSubscriptionPlans, createSubscriptionPlan,
-  getUpsellRules, createUpsellRule
+  getSubscriptionPlans, createSubscriptionPlan, updateSubscriptionPlan, deleteSubscriptionPlan,
+  getUpsellRules, createUpsellRule, updateUpsellRule, deleteUpsellRule
 };

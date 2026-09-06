@@ -5,6 +5,8 @@ const Fulfillment = require('../models/Fulfillment');
 const { allocateQuote } = require('../services/warehouseEngine');
 const { consumeAllocations, restoreAllocations } = require('../services/inventoryService');
 const { logAudit } = require('../services/auditService');
+const { ROLES } = require('../config/roles');
+const eventBus = require('../events/eventBus');
 
 function round2(n) {
   return Math.round((n + Number.EPSILON) * 100) / 100;
@@ -65,6 +67,23 @@ async function allocate(req, res, next) {
       user: req.user, action: 'WAREHOUSE_ALLOCATED', entity: 'Fulfillment', entityId: fulfillment._id,
       newValue: { allocations: fulfillment.allocations, backorders: fulfillment.backorders }
     });
+    
+    // Note: quote is defined inside the transaction, but we need it here.
+    // However, it's out of scope. Let's just fetch it again to be safe.
+    const quoteForEvent = await Quote.findById(req.params.quoteId);
+    if (quoteForEvent) {
+      eventBus.broadcast('fulfillment.created', fulfillment, {
+        roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+        users: [quoteForEvent.rep]
+      });
+      if (fulfillment.backorders && fulfillment.backorders.length > 0) {
+        eventBus.broadcast('backorder.created', fulfillment, {
+          roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+          users: [quoteForEvent.rep]
+        });
+      }
+    }
+
     res.json(fulfillment);
   } catch (err) { next(err); } finally {
     await session.endSession();
@@ -146,6 +165,12 @@ async function override(req, res, next) {
       newValue: { allocations: fulfillment.allocations },
       reason
     });
+    
+    eventBus.broadcast('fulfillment.updated', fulfillment, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [quote.rep]
+    });
+
     res.json(fulfillment);
   } catch (err) { next(err); } finally {
     await session.endSession();

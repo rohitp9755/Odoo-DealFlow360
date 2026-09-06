@@ -3,6 +3,7 @@ const { computeQuote, round2 } = require('../services/quoteCalculator');
 const { evaluateAndRouteApproval } = require('../services/approvalEngine');
 const { logAudit } = require('../services/auditService');
 const { ROLES } = require('../config/roles');
+const eventBus = require('../events/eventBus');
 
 // Internal (rep/manager/finance/admin) full view.
 async function list(req, res, next) {
@@ -50,6 +51,13 @@ async function create(req, res, next) {
     });
 
     await logAudit({ user: req.user, action: 'QUOTE_CREATED', entity: 'Quote', entityId: quote._id, newValue: { total: quote.total } });
+    
+    eventBus.broadcast('quotation.created', quote, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [quote.rep],
+      customers: [quote.customer]
+    });
+
     res.status(201).json(quote);
   } catch (err) { next(err); }
 }
@@ -94,6 +102,12 @@ async function update(req, res, next) {
       oldValue: { total: oldTotal }, newValue: { total: existing.total }
     });
 
+    eventBus.broadcast('quotation.updated', existing, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [existing.rep],
+      customers: [existing.customer]
+    });
+
     res.json(existing);
   } catch (err) { next(err); }
 }
@@ -126,6 +140,12 @@ async function submit(req, res, next) {
     quote.stage = requiresApproval ? 'pending_approval' : 'approved';
     await quote.save();
 
+    eventBus.broadcast('quotation.submitted', quote, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [quote.rep],
+      customers: [quote.customer._id]
+    });
+
     res.json({ quote, requiresApproval, approval, headlineDiscount: round2(headlineDiscount) });
   } catch (err) { next(err); }
 }
@@ -151,6 +171,12 @@ async function confirm(req, res, next) {
     await quote.save();
 
     await logAudit({ user: req.user, action: 'QUOTE_CONFIRMED', entity: 'Quote', entityId: quote._id });
+
+    eventBus.broadcast('quotation.confirmed', quote, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [quote.rep],
+      customers: [quote.customer]
+    });
 
     res.json(quote);
   } catch (err) { next(err); }

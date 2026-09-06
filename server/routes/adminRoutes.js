@@ -17,8 +17,12 @@ router.put('/warehouse-stock', ctrl.setStock);
 
 router.get('/subscription-plans', ctrl.getSubscriptionPlans);
 router.post('/subscription-plans', ctrl.createSubscriptionPlan);
+router.put('/subscription-plans/:id', ctrl.updateSubscriptionPlan);
+router.delete('/subscription-plans/:id', ctrl.deleteSubscriptionPlan);
 
 router.get('/upsell-rules', ctrl.getUpsellRules);
 router.post('/upsell-rules', ctrl.createUpsellRule);
+router.put('/upsell-rules/:id', ctrl.updateUpsellRule);
+router.delete('/upsell-rules/:id', ctrl.deleteUpsellRule);
 
 module.exports = router;

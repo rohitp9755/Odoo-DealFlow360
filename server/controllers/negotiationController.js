@@ -8,6 +8,7 @@ const { computeQuote } = require('../services/quoteCalculator');
 const { logAudit } = require('../services/auditService');
 const { notify } = require('../services/notificationService');
 const { ROLES } = require('../config/roles');
+const eventBus = require('../events/eventBus');
 
 async function getOrCreateNegotiation(quoteId, customerId) {
   let negotiation = await Negotiation.findOne({ quote: quoteId });
@@ -111,6 +112,12 @@ async function sendMessage(req, res, next) {
     const populated = await Negotiation.findById(negotiation._id).populate('messages');
     const lastOffer = populated.offers[populated.offers.length - 1];
 
+    eventBus.broadcast('negotiation.created', populated, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [quote.rep],
+      customers: [quote.customer._id]
+    });
+
     res.json({
       negotiation: populated,
       offer: lastOffer ? { id: lastOffer._id, ...lastOffer.toObject() } : null
@@ -184,6 +191,12 @@ async function counterOffer(req, res, next) {
         await negotiation.save();
       }
 
+      eventBus.broadcast('negotiation.confirmed', quote, {
+        roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+        users: [quote.rep],
+        customers: [quote.customer._id]
+      });
+
       return res.json({ quote, offer, approval, requiresApproval });
     }
 
@@ -209,6 +222,12 @@ async function counterOffer(req, res, next) {
       });
       negotiation.messages.push(confirmMsg._id);
       await negotiation.save();
+
+      eventBus.broadcast('negotiation.updated', quote, {
+        roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+        users: [quote.rep],
+        customers: [quote.customer._id]
+      });
 
       return res.json({ quote, offer, approval, requiresApproval });
     }

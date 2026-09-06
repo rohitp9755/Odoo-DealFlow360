@@ -2,6 +2,8 @@ const Quote = require('../models/Quote');
 const Invoice = require('../models/Invoice');
 const { generateInvoicesForQuote, calculateProration } = require('../services/billingEngine');
 const { logAudit } = require('../services/auditService');
+const { ROLES } = require('../config/roles');
+const eventBus = require('../events/eventBus');
 
 async function getForQuote(req, res, next) {
   try {
@@ -18,6 +20,12 @@ async function generate(req, res, next) {
 
     const invoices = await generateInvoicesForQuote(quote);
     await logAudit({ user: req.user, action: 'INVOICES_GENERATED', entity: 'Quote', entityId: quote._id, newValue: { count: invoices.length } });
+    
+    eventBus.broadcast('invoice.created', { quoteId: quote._id, invoiceCount: invoices.length }, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN],
+      users: [quote.rep]
+    });
+
     res.json(invoices);
   } catch (err) { next(err); }
 }
@@ -33,6 +41,11 @@ async function cancelRecurring(req, res, next) {
     await invoice.save();
 
     await logAudit({ user: req.user, action: 'SUBSCRIPTION_CANCELLED', entity: 'Invoice', entityId: invoice._id, newValue: { refund } });
+    
+    eventBus.broadcast('subscription.cancelled', invoice, {
+      roles: [ROLES.SALES_MANAGER, ROLES.FINANCE, ROLES.ADMIN]
+    });
+
     res.json({ invoice, refund });
   } catch (err) { next(err); }
 }
